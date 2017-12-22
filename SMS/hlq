@@ -1,0 +1,5 @@
+#
+# print the hlq for this TSO user to the screen
+#
+tso profile 2>/dev/null | awk '/IKJ56688I/ { print $11; }' | /bin/sed -e "s/PREFIX(\([A-Z]*\))/\1/" 
+
