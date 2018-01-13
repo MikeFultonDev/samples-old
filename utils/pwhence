@@ -1,0 +1,10 @@
+mem=`(echo $1 | tr '[:lower:]' '[:upper:]')`
+ds=`opercmd 'd parmlib' | awk '/ENTRY  FLAGS  VOLUME  DATA SET/ { afterHeader=1; next; } /[ ]+[0-9]+/ { if (afterHeader) { print $4; next } }'`
+for d in $ds ; do
+	mls ${d} | grep -q ${mem} 2>/dev/null
+	if [ $? -eq 0 ]; then
+		echo ${d}
+		exit 0
+	fi
+done
+exit 1

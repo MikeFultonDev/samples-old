@@ -1,0 +1,59 @@
+x=`opercmd '$d condef' | grep DISPMAX` # msf - do some work to get the original dispmax
+opercmd '$t condef,dispmax=1000000' >/dev/null 2>&1
+opercmd 'd jobs,all' >/tmp/out
+# set the condef back again...
+opercmd '$t condef,dispmax=100' >/dev/null 2>&1
+#
+#Sample raw output:
+#
+#S0W1      2018005  11:09:37.20             IEE115I 11.09.37 2018.005 ACTIVITY 846
+#                                            JOBS     M/S    TS USERS    SYSAS    INITS   ACTIVE/MAX VTAM     OAS
+#                                           00018    00030    00000      00033    00030    00000/00040       00038
+#                                            *MASTER* *MASTER*          NSW  *   A=0001   PER=NO   SMC=000
+#                                                                                PGN=N/A  DMN=N/A  AFF=NONE
+#                                                                                CT=00.18.12  ET=00402.40
+#                                                                                WUID=STC03388 USERID=+MASTER+
+#                                                                                WKL=SYSTEM   SCL=SYSTEM   P=1
+#                                                                                RGP=N/A      SRVR=NO  QSC=NO
+#                                            PCAUTH   PCAUTH            NSW  *   A=0002   PER=NO   SMC=000
+#                                                                                PGN=N/A  DMN=N/A  AFF=NONE
+#                                                                                CT=000.010S  ET=00402.40
+#                                                                                WKL=SYSTEM   SCL=SYSTEM   P=1
+#                                                                                RGP=N/A      SRVR=NO  QSC=NO
+#
+#Fields:
+#List of active jobs for the specific name:
+# Jobname, APPC/MVS transaction program name, initiator address space name
+# Stepname
+# Procedure stepname or requesting userid
+# Type of job
+# Address space identifier
+# A=<...> Address space status
+# PER=<...> Program event recording (PER) activity
+# SMC=<...> Number of outstanding step-must-complete requests
+# AFF=<...> Processor affinity
+# ET=<...> Elapsed time since initiation
+# Accumulated processor time
+# WUID=<...> Work unit identifier
+# USERID=<...> Transaction requestor's userid
+# Central (real) address range (V=R only)
+
+cat /tmp/out | awk '
+function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
+function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
+function trim(s)  { return rtrim(ltrim(s)); }
+BEGIN { inHeader=0; firstLine=0; inLine=0; count=0; blank=" "; }
+       /^[ ]+JOBS[ ]+M.S[ ]+TS USERS[ ]+SYSAS[ ]+INITS[ ]+ACTIVE.MAX VTAM[ ]+OAS/ { inHeader=1; next; }
+       /^[ ]+PGN=/ { second=trim($0); next; }
+       /^[ ]+CT=/  { third=trim($0); next; }
+       /^[ ]+WUID=/  { fourth=trim($0); next; }
+       /^[ ]+WKL=/  { fifth=trim($0); next; }
+       /^[ ]+RGP=/  { sixth=trim($0); firstLine=1; print first blank second blank third blank fourth blank fifth blank sixth; next; }
+       /^[ ]+/ 	{ 
+			if (inHeader) { 
+				jobInfo=$0; inHeader=0; firstLine=1; next; 
+			} else if (firstLine) { 
+				first=trim($0); inLine=1; firstLine=0; next; 
+			}
+		}
+     ' | sort -r -k 12.4

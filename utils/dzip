@@ -1,0 +1,28 @@
+#
+# simple program that 'zips' (archives) a set of datasets into a blob
+#
+if [ -z "$1" ]; then
+	echo 'dzip <dataset-pattern>'
+        echo '  example: dzip IBMUSER.MVSCMD.**'
+        exit 16
+else
+	datasetpattern=$1;
+fi
+hlq=`./hlq`
+rnd=${RANDOM}
+tempds="${hlq}.DZIP.TEMP.D${rnd}"
+temphfs=/tmp/d${rnd}.dzp
+tso "alloc dsn('${tempds}') recfm(u) lrecl(0) dsorg(ps) dsntype(basic) catalog tracks space(1000,1000)" >/dev/null 2>&1
+tso "alloc dsn('${tempds}.TRS') recfm(f,b) lrecl(1024) dsorg(ps) dsntype(basic) catalog tracks space(1000,1000)" >/dev/null 2>&1
+
+(
+ echo " DUMP OUTDD(ARCHIVE) -\n        DS(INCL(${datasetpattern}))" | 
+    mvscmdauth -v --pgm=ADRDSSU --archive=${tempds},old --sysin=stdin --sysprint=stdout |
+    awk '!/1PAGE|ADR109I|ADR006I|ADR801I|ADR006I|ADR013I|ADR012I/'
+)
+mvscmd --pgm=AMATERSE --args='SPACK' --sysut1=${tempds} --sysut2=${tempds}.TRS --sysprint=*
+cp -B "//'"${tempds}.TRS"'" ${temphfs}
+echo "Datasets of pattern: ${datasetpattern} zipped to: ${temphfs}"
+
+tsocmd "delete '${tempds}'" >/dev/null 2>&1
+tsocmd "delete '${tempds}.TRS'" >/dev/null 2>&1

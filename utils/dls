@@ -1,0 +1,36 @@
+ListBasic() {
+(
+ echo " LISTCAT -\n LEVEL(${datasetprefix}\n" | 
+   mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
+   awk '/0NONVSAM/ { print $3 }'
+)
+}
+
+ListDetails() {
+tsocmd "listds ('$1') level " |
+  awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; attr=""; }
+       /--RECFM-LRECL-BLKSIZE-DSORG/ { inHeaderA=1; next; }
+       /--VOLUMES--/ { inHeaderB=1; next; }
+       /\ \ / { if (inHeaderA) { attr=$0; inHeaderA=0; next; } else if (inHeaderB) { vol=$0; inHeaderB=0; print ds attr vol; next; } }
+      { inHeaderA=0; inHeaderB=0; ds=$0; vol=""; attr=""; next; }
+     '
+}
+#
+# simple program that lists non-VSAM datasets that start with a prefix
+#
+#set -x
+if [ -z "$1" ]; then
+	echo 'Syntax: dls <dataset-prefix>'
+	echo 'Example: dls IBMUSER.MVSCMD'
+	exit 16
+else
+	if [ "$1" = "-l" ]; then 
+		datasetprefix=$2;
+		datasetprefix=$(echo ${datasetprefix} | tr '[:lower:]' '[:upper:]');
+		ListDetails ${datasetprefix};
+	else
+		datasetprefix=$1;
+		datasetprefix=$(echo ${datasetprefix} | tr '[:lower:]' '[:upper:]');
+		ListBasic ${datasetprefix};
+	fi
+fi

@@ -1,0 +1,7 @@
+mem=`(echo $1 | tr '[:lower:]' '[:upper:]')`
+loc=`pwhence ${mem}`
+if [ $? -gt 0 ]; then 
+	echo "Member:  ${mem} not in concatenation"
+	exit 8
+fi
+cat //"'${loc}(${mem})'"

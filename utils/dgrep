@@ -1,0 +1,17 @@
+#
+# simple program that searches all the PDS members for a string, e.g. dgrep IEFPROC sys1.proclib
+#
+if [ -z "$2" ]; then
+	echo 'dgrep <str> <dataset-pattern>'
+        echo '  example: dgrep rexx IBMUSER.MVSCMD.TSO.*'
+        exit 16
+else
+	str=$1;
+	datasetpattern=$2;
+	datasetpattern=$(echo ${datasetpattern} | tr '[:lower:]' '[:upper:]')
+fi
+datasets=`echo " LISTCAT -\n ENTRIES("${datasetpattern}")\n" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | awk '/0NONVSAM/ { print $3 }' `
+for dataset in ${datasets}; do
+	echo "SRCHFOR '"${str}"'\n" | mvscmd --pgm=isrsupc --args='SRCHCMP,ANYC,IDPRFX,NOSUMS,LONGLN,NOPRTCC' --newdd=${dataset} --outdd=* --sysin=stdin | 
+         awk '!/  ISRSUPC/';
+done

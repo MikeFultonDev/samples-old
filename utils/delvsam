@@ -1,0 +1,11 @@
+#
+# delete a VSAM cluster
+#
+if [[ $# -ne 1 ]]; then
+	echo "Syntax: delvsam <vsam fully-qualified dataset>"
+	exit 16
+fi
+vsam=$1
+vsam=$(echo ${vsam} | tr '[:lower:]' '[:upper:]')
+echo " DELETE ${vsam}\n" | mvscmdauth --pgm="IDCAMS" --args="MARGINS(2 72)" --sysin=stdin --sysprint=dummy
+exit $?

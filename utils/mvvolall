@@ -1,0 +1,18 @@
+#
+# move all non-VSAM datasets from one volume to a new (specified) volume
+#
+if [[ $# -ne 2 ]]; then
+	echo "Syntax: mvvolall <srcvol> <tgtvol>"
+	exit 16
+fi
+srcvol=$1
+srcvol=$(echo ${srcvol} | tr '[:lower:]' '[:upper:]')
+tgtvol=$2
+tgtvol=$(echo ${tgtvol} | tr '[:lower:]' '[:upper:]')
+
+ds=`dvtoc ${srcvol} | awk '{ print $1; }'`
+for d in ${ds} ; do
+	echo "mvvol ${d} ${tgtvol} \c"
+	mvvol ${d} ${tgtvol}
+	echo " return code $?"
+done

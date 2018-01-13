@@ -1,0 +1,2 @@
+hlq=`hlq`
+opercmd "\$d jobq,QUEUE=XEQ,USERID=${hlq}" 

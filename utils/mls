@@ -1,0 +1,11 @@
+#
+# simple program that lists PDS members
+#
+if [ -z "$1" ]; then
+	echo 'Syntax: mls <dataset>'
+	echo 'Example: mls SYS1.PARMLIB'
+	exit 16
+else
+	dataset=$1;
+fi
+tsocmd listds "'"${dataset}"'" members 2>/dev/null | tail +7
