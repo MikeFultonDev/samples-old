@@ -1,5 +1,5 @@
 #
-# simple program that 'zips' (archives) a set of datasets into a blob
+# 'zips' (archives) a set of datasets into a blob
 #
 if [ -z "$1" ]; then
 	echo 'dzip <dataset-pattern>'
@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
 else
 	datasetpattern=$1;
 fi
-hlq=`./hlq`
+hlq=`hlq`
 rnd=${RANDOM}
 tempds="${hlq}.DZIP.TEMP.D${rnd}"
 temphfs=/tmp/d${rnd}.dzp

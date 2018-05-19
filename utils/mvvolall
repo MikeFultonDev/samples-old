@@ -10,7 +10,7 @@ srcvol=$(echo ${srcvol} | tr '[:lower:]' '[:upper:]')
 tgtvol=$2
 tgtvol=$(echo ${tgtvol} | tr '[:lower:]' '[:upper:]')
 
-ds=`dvtoc ${srcvol} | awk '{ print $1; }'`
+ds=`vtocls ${srcvol} | awk '{ print $1; }'`
 for d in ${ds} ; do
 	echo "mvvol ${d} ${tgtvol} \c"
 	mvvol ${d} ${tgtvol}

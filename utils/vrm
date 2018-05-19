@@ -1,8 +1,8 @@
 #
-# delete a VSAM cluster
+# remove a VSAM cluster
 #
 if [[ $# -ne 1 ]]; then
-	echo "Syntax: delvsam <vsam fully-qualified dataset>"
+	echo "Syntax: vrm <vsam fully-qualified dataset>"
 	exit 16
 fi
 vsam=$1

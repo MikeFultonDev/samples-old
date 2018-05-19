@@ -1,13 +1,13 @@
 #
-# display datasets in a volume
+# list datasets in a volume
 #
 if [[ $# -ne 1 ]]; then
-	echo "Syntax: dvtoc <vol>"
+	echo "Syntax: vtocls <vol>"
 	exit 16
 fi
 vol=$1
 vol=$(echo ${vol} | tr '[:lower:]' '[:upper:]')
-vtoc=`echo "  LISTVTOC FORMAT,VOL=SER=${vol}\n" | mvscmd --pgm=iehlist --args='' --dd2=${vol},vol  --sysin=stdin --sysprint=*`
+vtoc=`echo "  LISTVTOC FORMAT,VOL=3390=${vol}\n" | mvscmd --pgm=iehlist --args='' --dd2=${vol},vol  --sysin=stdin --sysprint=*` 
 rc=$?
 if [[ ${rc} -gt 0 ]] ; then
 	echo "Volume ${vol} not found"
@@ -15,3 +15,4 @@ if [[ ${rc} -gt 0 ]] ; then
 else 
 	echo "$vtoc" | awk '/0---------------DATA SET NAME----------------/ { processedHeader = 1 } !/0---------------DATA SET NAME----------------/ { if (processedHeader) { print; processedHeader=0 } }'
 fi
+exit 0

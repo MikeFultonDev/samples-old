@@ -1,0 +1,11 @@
+#
+# remove a dataset
+#
+if [[ $# -ne 1 ]]; then
+	echo "Syntax: drm <fully-qualified dataset>"
+	exit 16
+fi
+ds=$1
+ds=$(echo ${ds} | tr '[:lower:]' '[:upper:]')
+tsocmd "DELETE '${ds}'"
+exit $?

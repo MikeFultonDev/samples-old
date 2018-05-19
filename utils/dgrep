@@ -1,9 +1,10 @@
 #
-# simple program that searches all the PDS members for a string, e.g. dgrep IEFPROC sys1.proclib
+# Search all datasets matching the pattern for a string, e.g. dgrep IEFPROC sys1.* would search for IEFPROC in all datasets matching SYS1.*
+# Datasets may be sequential datasets or partitioned datasets. If the dataset is partitioned, the search will go across all members of the dataset.
 #
 if [ -z "$2" ]; then
 	echo 'dgrep <str> <dataset-pattern>'
-        echo '  example: dgrep rexx IBMUSER.MVSCMD.TSO.*'
+        echo '  example: dgrep rexx IBMUSER.MVSCMD.TSO.* (search for rexx (case insensitive) inn all datasets of the pattern IBMUSER.MVSCMD.TSO.*)'
         exit 16
 else
 	str=$1;
@@ -12,6 +13,7 @@ else
 fi
 datasets=`echo " LISTCAT -\n ENTRIES("${datasetpattern}")\n" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | awk '/0NONVSAM/ { print $3 }' `
 for dataset in ${datasets}; do
-	echo "SRCHFOR '"${str}"'\n" | mvscmd --pgm=isrsupc --args='SRCHCMP,ANYC,IDPRFX,NOSUMS,LONGLN,NOPRTCC' --newdd=${dataset} --outdd=* --sysin=stdin | 
+	echo "SRCHFOR '"${str}"'\n" | 
+         mvscmd --pgm=isrsupc --args='SRCHCMP,ANYC,IDPRFX,NOSUMS,LONGLN,NOPRTCC' --newdd=${dataset} --outdd=* --sysin=stdin | 
          awk '!/  ISRSUPC/';
 done

@@ -1,5 +1,6 @@
 #
-# simple program that lists VSAM datasets that start with a prefix
+# List VSAM datasets that start with a prefix
+# For details, add 'ALL' and switch to ENTRIES and specify one dataset...
 #
 if [ -z "$1" ]; then
 	echo 'Syntax: vls <dataset-prefix>'

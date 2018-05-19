@@ -1,3 +1,7 @@
+#
+# Perform a find/replace in a sequential dataset or PDS member
+#
+#set -x
 Syntax() {
 	echo 'dsed <cmd> <dataset>'
         echo '  example: dsed s/old/new/g IBMUSER.MVSCMD.DFSORT.FILE'
@@ -5,10 +9,6 @@ Syntax() {
         exit 16
 }
 MAX_CHANGE=47
-#set -x
-#
-# simple program that does a find/replace in a dataset (or PDS member)
-#
 if [ -z "$2" ]; then
 else
 	cmd=$1;

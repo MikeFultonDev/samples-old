@@ -1,5 +1,5 @@
 #
-# simple program that lists PDS members
+# list PDS members
 #
 if [ -z "$1" ]; then
 	echo 'Syntax: mls <dataset>'

@@ -1,5 +1,5 @@
 #
-# simple program that 'unzips' (restores) a blob into a set of datasets with an optional new HLQ
+# 'unzip' (restores) a blob into a set of datasets with an optional new HLQ
 #
 #set -x
 if [ -z "$1" ]; then
@@ -10,12 +10,12 @@ if [ -z "$1" ]; then
 else
 	infile=$1;
 	if [ -z "$2" ]; then
-		newhlq=`./hlq`
+		newhlq=`hlq`
 	else
 		newhlq=$2
 	fi	
 fi
-hlq=`./hlq`
+hlq=`hlq`
 rnd=${RANDOM}
 tempds="${hlq}.DZIP.TEMP.D${rnd}"
 tso "alloc dsn('${tempds}') recfm(u) lrecl(0) dsorg(ps) blksize(27998) dsntype(basic) catalog tracks space(1000,1000)" >/dev/null 2>/dev/null

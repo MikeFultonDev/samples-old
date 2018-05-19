@@ -1,0 +1,4 @@
+#
+# print information about online volumes
+#
+opercmd 'd u,dasd,online' 

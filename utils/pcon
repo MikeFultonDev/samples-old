@@ -1,0 +1,84 @@
+/* REXX */                                                                      
+/* Print the last minute, hour or day or all of the operator console log */
+arg options                                                                     
+trace 'o'                                                                       
+parse var options command                                                       
+parse var command op                                                       
+
+rc=isfcalls('ON')                                                               
+/* Use SDSF Interface to go to LOG. Use mm/dd/yy format */                               
+isfdate="mmddyyyy /"
+
+op = strip(op,'L')                                                    
+isflogstopdate=date("U")
+isflogstoptime=time("N")
+currdate=date("C")
+currtime=time("N")
+
+select
+  when op='H' then do
+    currhour=substr(currtime, 1, 2)
+    if (currhour = '01') then do
+      prevhour = "23" || substr(currtime, 3)
+      yesterdate=currdate-1
+    end
+    else do
+      prevhour = currhour-1 || substr(currtime, 3)
+      yesterdate=currdate
+    end
+    isflogstartdate=date("U",yesterdate,"C")
+    isflogstarttime=prevhour
+  end
+  when op='D' then do
+    yesterdate=currdate-1
+    isflogstartdate=date("U",yesterdate,"C")
+    isflogstarttime=currtime
+  end
+  when op='W' then do
+    lastweek=currdate-7
+    isflogstartdate=date("U",lastweek,"C")
+    isflogstarttime=currtime
+  end
+  when op='M' then do
+    lastmonth=currdate-31 /* close enough */
+    isflogstartdate=date("U",lastmonth,"C")
+    isflogstarttime=currtime
+  end
+  when op='Y' then do
+    lastyear=currdate-365
+    isflogstartdate=date("U",lastyear,"C")
+    isflogstarttime=currtime
+  end
+  when op='A' | op='*' then do
+    startoftime="1"
+    isflogstartdate=date("U",startoftime,"C")
+    isflogstarttime=currtime
+  end
+  otherwise do
+    say 'Syntax: prtcon h|d|w|m|y|a|*'
+    say '  h....last hour of data written to the log'
+    say '  d....last day of data written to the log'
+    say '  w....last week of data written to the log'
+    say '  m....last month of data written to the log'
+    say '  y....last year of data written to the log'
+    say '  a....the entire log'
+    say '  *....the entire log'
+    exit 4                                                                     
+  end
+end
+
+Address SDSF "ISFLOG READ TYPE(SYSLOG)"
+                                                                                
+if rc<>0 then do                                                                
+     say 'Bad return from log.  rc is ' rc                                 
+     Exit rc                                                                    
+end                                                                             
+
+do ix=1 to isfline.0                                                            
+    say isfline.ix                                                              
+end                                                                             
+                                                                                
+rc=isfcalls('OFF')
+
+exit rc
+

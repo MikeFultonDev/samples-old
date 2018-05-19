@@ -1,0 +1,63 @@
+/* REXX */                                                                      
+/* Print the output for a given job id and DDname */
+arg options                                                                     
+trace 'o'                                                                       
+parse var options command                                                       
+parse var command jobid ddname
+
+rc=isfcalls('ON')                                                               
+
+jobid = strip(jobid,'L')                                                    
+if (jobid == '') then do
+  Say 'Need to specify a job and ddname to print'
+  exit(4)
+end
+ddname = strip(ddname,'L')                                                    
+if (ddname == '') then do
+  Say 'Need to specify a ddname to print'
+  exit(4)
+end
+
+Address SDSF "ISFEXEC ST "
+                                                                                
+if rc<>0 then do                                                                
+  say 'Bad return from log.  rc is ' rc                                 
+  Exit rc                                                                    
+end                                                                             
+
+numrows=isfrows
+tok=''
+do ix=1 to numrows
+  cur_jobid = jobid.ix
+  if (cur_jobid == jobid) then do
+     tok = token.ix
+     leave
+  end 
+end  
+if (tok = '') then do
+  say 'Unable to find job id:' jobid
+  exit 4
+end                                                                           
+    
+Address SDSF "ISFACT ST TOKEN('"tok"') PARM(NP ?)"
+tok = ''                
+do ix=1 to ddname.0   /* loop for all rows returned */
+  cur_dd = ddname.ix
+  if (cur_dd == ddname) then do
+    tok = token.ix
+    leave
+  end
+end 
+if (tok = '') then do
+  say 'Unable to find ddname:' ddname 'for job id:' jobid
+  exit 4
+end                                                                           
+
+Address SDSF "ISFBROWSE ST TOKEN('"tok"')"
+do ix=1 to isfline.0
+  say isfline.ix
+end
+
+rc=isfcalls('OFF')
+
+exit rc

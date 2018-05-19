@@ -1,3 +1,0 @@
-cpuinfo=`opercmd 'd m=cpu'`
-
-echo "$cpuinfo"

@@ -1,1 +1,4 @@
+#
+# Print the SMS-managed volumes
+#
 opercmd 'd sms,storgrp(all),listvol'

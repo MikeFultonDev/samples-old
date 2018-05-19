@@ -1,36 +1,68 @@
+#
+# List non-VSAM datasets that start with a prefix.
+# If '-l' is specified, the long list form, showing recfm, lrecl, blksize, dsorg, volumes is shown
+#
+#set -x
+
 ListBasic() {
 (
- echo " LISTCAT -\n LEVEL(${datasetprefix}\n" | 
+ if [ "$2" = "*" ]; then
+   pattern="LEVEL($1)"
+ else
+   pattern="ALL ENTRIES($1)"
+ fi
+ echo " LISTCAT -\n ${pattern}\n" | 
    mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
    awk '/0NONVSAM/ { print $3 }'
 )
 }
 
 ListDetails() {
-tsocmd "listds ('$1') level " |
-  awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; attr=""; }
+ if [ "$2" = "*" ]; then
+   pattern="('$1') LEVEL"
+ else
+   pattern="('$1')"
+ fi
+ tsocmd "listds ${pattern}" 2>/dev/null |
+   awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; }
        /--RECFM-LRECL-BLKSIZE-DSORG/ { inHeaderA=1; next; }
        /--VOLUMES--/ { inHeaderB=1; next; }
-       /\ \ / { if (inHeaderA) { attr=$0; inHeaderA=0; next; } else if (inHeaderB) { vol=$0; inHeaderB=0; print ds attr vol; next; } }
-      { inHeaderA=0; inHeaderB=0; ds=$0; vol=""; attr=""; next; }
+       /\ \ / { 
+        if (inHeaderA) { 
+          recfm=$1; lrecl=$2; blksize=$3; dsorg=$4; inHeaderA=0; next; 
+        } else if (inHeaderB) { 
+          vol=$1; inHeaderB=0; printf "%-45s %2s %2s %5s %6s\n", ds, dsorg, recfm, lrecl, vol; next; 
+        } 
+      }
+      { inHeaderA=0; inHeaderB=0; ds=$1; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; next; }
      '
 }
-#
-# simple program that lists non-VSAM datasets that start with a prefix
-#
-#set -x
+
+
 if [ -z "$1" ]; then
 	echo 'Syntax: dls <dataset-prefix>'
 	echo 'Example: dls IBMUSER.MVSCMD'
 	exit 16
+fi
+if [ "$1" = "-l" ]; then 
+	details=1
+	datasetpattern=$2;
 else
-	if [ "$1" = "-l" ]; then 
-		datasetprefix=$2;
-		datasetprefix=$(echo ${datasetprefix} | tr '[:lower:]' '[:upper:]');
-		ListDetails ${datasetprefix};
-	else
-		datasetprefix=$1;
-		datasetprefix=$(echo ${datasetprefix} | tr '[:lower:]' '[:upper:]');
-		ListBasic ${datasetprefix};
-	fi
+	details=0
+	datasetpattern=$1;
+fi
+datasetpattern=$(echo ${datasetpattern} | tr '[:lower:]' '[:upper:]');
+filename=$(basename -- "$datasetpattern"); extension="${filename##*.}"; file="${filename%.*}"; 
+
+if [[ "${extension}" = "*" || "${extension}" = "**" ]]; then 
+	option="*"
+	pattern=${file}
+else
+	option=""
+	pattern="${file}.${extension}"
+fi
+if [ ${details} -gt 0 ]; then
+	ListDetails "${pattern}" "${option}";
+else
+	ListBasic "${pattern}" "${option}";
 fi

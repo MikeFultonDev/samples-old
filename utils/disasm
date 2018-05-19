@@ -1,7 +1,0 @@
-#
-# disassemble a dataset module
-#
-(
-export STEPLIB=IBMUSER.ASMDASM.LOAD:HLA.SASMMOD2; 
-echo "MVSCMD MVSCMD C_CODE   \n" | mvscmd --pgm=ASMDASM --syslib="IBMUSER.MVSCMD.LOAD(MVSCMD)" --sysprint=* --syspunch=* --sysin=stdin
-)
