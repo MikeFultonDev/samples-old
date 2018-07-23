@@ -1,0 +1,41 @@
+#
+# pcatalog: print a catalog of all entries
+#  If the -l option is specified, precede each entry with it's type
+# 
+#set -x
+if [ "$1" = "-l" ]; then
+        details=1
+ 	catalog=$2;
+else
+    	details=0
+        catalog=$1;
+fi
+catalog=$(echo ${catalog} | tr '[:lower:]' '[:upper:]');
+mvscmdauth --pgm=IDCAMS --sysprint=* --sysin=stdin <<zzz |
+  LISTCAT CATALOG('${catalog}')
+zzz
+awk -v details=${details} '
+           function fmt(type, name) { if (details) { print(type " " name); } else { print(name); } }
+           /0CLUSTER ------- 00000000000000000000000000000000000000000000/ { next; }
+           /0USERCATALOG ---/ { type="CATALOG"; name=$3; fmt(type, name); }
+           /0PAGESPACE -----/ { type="PAGESPACE"; name=$3; fmt(type, name) ;}
+           /0NONVSAM -------/ { type="NONVSAM"; name=$3; fmt(type, name); }
+           /0CLUSTER -------/ { type="CLUSTER"; name=$3; fmt(type, name); }
+           /0ALIAS ---------/ { type="ALIAS"; name=$3; fmt(type, name); }
+           /0GDG BASE ------/ { type="GDGBASE"; name=$4; fmt(type, name); }
+           /0AIX -----------/ { type="AIX"; name=$3; fmt(type, name); }
+           /0/ { 
+                 if ($2 == "DATA") { 
+                   type="DATA"; name=$4; fmt(type, name); 
+                 } else if ($2 == "INDEX") { 
+                   type="INDEX"; name=$4; fmt(type, name); 
+                 } else if ($2 == "PATH") { 
+                   type="PATH"; name=$4; fmt(type, name); 
+                 } else if ($2 == "NONVSAM") { 
+                   type="GDG"; name=$4; fmt(type, name); 
+                 } else { 
+                   next; 
+                 } 
+               }
+    '
+exit 0

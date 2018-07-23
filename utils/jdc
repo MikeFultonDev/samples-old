@@ -1,0 +1,27 @@
+/* REXX */
+/* 
+ * jdc: JulianDateConversion: convert date in format yyyy.ddd or yyddd to sortable, human-readable date: yy/mm/dd
+ * Called with no parameters, the current date is assumed    
+ * Result is printed to console
+ */
+Parse Arg input .
+Trace 'o'
+
+If (input = '') Then Do
+  input = DATE('J')
+End
+
+centuries="20"
+dot=INDEX(input, '.')
+If (dot > 0) Then Do
+  Parse Var input year'.'days
+  If (year > 99) Then Do
+    centuries = (year%100)
+    year = year - (centuries*100)
+  End
+  input = year""days
+End
+
+Call CharOut, centuries""DATE('O', input, 'J')
+
+Return 0

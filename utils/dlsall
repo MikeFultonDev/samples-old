@@ -3,7 +3,7 @@
 # This can take awhile to run. This could print out a -lot- of data
 #
 #set -x
-vols=`pvol | tail +5 | awk ' {print substr($0,68,6)}'`
+vols=`pvol | awk ' {print substr($0,68,6)}'`
 dall=''
 for v in $vols; do
 	echo "Reading volume: ${v}"

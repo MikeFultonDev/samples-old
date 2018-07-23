@@ -1,0 +1,20 @@
+#
+
+if [[ $# -ne 1 ]]; then
+	echo "Syntax: vtoclsraw <vol>"
+	exit 16
+fi
+vol=$1
+vol=$(echo ${vol} | tr '[:lower:]' '[:upper:]')
+ds="SYS1.VVDS.V"${vol}
+vtoc=`mvscmd --pgm=iehlist --sysprint=* --dd=${ds} --sysin=stdin <<zzz
+ LISTVTOC FORMAT,VOL=3390=${vol}
+zzz`
+rc=$?
+if [[ ${rc} -gt 0 ]] ; then
+  echo "Volume ${vol} not found"
+  exit 16
+else 
+  echo "$vtoc" 
+fi
+exit 0

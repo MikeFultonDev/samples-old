@@ -1,15 +1,17 @@
 #
 # List non-VSAM datasets that start with a prefix.
 # If '-l' is specified, the long list form, showing recfm, lrecl, blksize, dsorg, volumes is shown
+# If you want to sort by time (for example), pipe it to sort, e.g. sort -b -k2 (TBD - add 't' option and perhaps others)
+# Consider adding in an option to show how much is already written by dumping out the VTOC information - see vtocls
 #
 #set -x
 
 ListBasic() {
 (
  if [ "$2" = "*" ]; then
-   pattern="LEVEL($1)"
+   pattern="LEVEL($1) HISTORY"
  else
-   pattern="ALL ENTRIES($1)"
+   pattern="ALL ENTRIES($1) HISTORY"
  fi
  echo " LISTCAT -\n ${pattern}\n" | 
    mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
@@ -19,22 +21,26 @@ ListBasic() {
 
 ListDetails() {
  if [ "$2" = "*" ]; then
-   pattern="('$1') LEVEL"
+   pattern="('$1') HISTORY LEVEL"
  else
-   pattern="('$1')"
+   pattern="('$1') HISTORY"
  fi
  tsocmd "listds ${pattern}" 2>/dev/null |
-   awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; }
-       /--RECFM-LRECL-BLKSIZE-DSORG/ { inHeaderA=1; next; }
+   awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; recfm=""; lrecl=""; blksize=""; created=""; dsorg=""; }
+       /--RECFM-LRECL-BLKSIZE-DSORG-CREATED---EXPIRES---SECURITY/ { inHeaderA=1; next; }
        /--VOLUMES--/ { inHeaderB=1; next; }
        /\ \ / { 
         if (inHeaderA) { 
-          recfm=$1; lrecl=$2; blksize=$3; dsorg=$4; inHeaderA=0; next; 
+          recfm=$1; lrecl=$2; blksize=$3; dsorg=$4; created=$5; inHeaderA=0; next; 
         } else if (inHeaderB) { 
-          vol=$1; inHeaderB=0; printf "%-45s %2s %2s %5s %6s\n", ds, dsorg, recfm, lrecl, vol; next; 
+          vol=$1; inHeaderB=0; 
+          printf("%-45s ", ds);
+          system("jdc " created);
+          printf(" %2s %3s %5s %6s\n", dsorg, recfm, lrecl, vol); 
+          next; 
         } 
       }
-      { inHeaderA=0; inHeaderB=0; ds=$1; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; next; }
+      { inHeaderA=0; inHeaderB=0; ds=$1; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; created=""; next; }
      '
 }
 

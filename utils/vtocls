@@ -1,18 +1,130 @@
 #
 # list datasets in a volume
+# IEHLIST format: https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.3.0/com.ibm.zos.v2r3.idau100/u1262.htm
+# Explanation of extents: http://publibfp.boulder.ibm.com/cgi-bin/bookmgr/BOOKS/dgt2d450/1.3.4?ACTION=MATCHES&REQUEST=extent&TYPE=FUZZY&SHELF=&DT=20060524093000&CASE=&searchTopic=TOPIC&searchText=TEXT&searchIndex=INDEX&rank=RANK&ScrollTOP=FIRSTHIT#FIRSTHIT
 #
+# Example output for a PO and PS datasets from IEHLIST
+# 0---------------DATA SET NAME----------------  SER NO  SEQNO  DATE.CRE  DATE.EXP  DATE.REF  EXT DSORG RECFM OPTCD BLKSIZE
+#  TSTRADM.TEST.DTOUCH.BASIC                     USER20      1  2018.161    00.000  2018.161    1  PO   FB     00    32720 
+# 0SMS.IND   LRECL  KEYLEN  INITIAL ALLOC  2ND ALLOC    EXTEND       LAST BLK(T-R-L)  DIR.REM  F2 OR F3(C-H-R)  DSCB(C-H-R)
+#  S  BI        80            TRKS             107            5MB                                                 0   1   6
+#  EATTR                                                                                                                   
+#  NS                                                                                                                      
+# 0            EXTENTS  NO  LOW(C-H)   HIGH(C-H)                                                                           
+#                         0 25604  0    25611  2                                                                           
+#                                  ----UNABLE TO CALCULATE EMPTY SPACE.                                                    
+# 0                                                                                                                        
+# 1                              SYSTEMS SUPPORT UTILITIES---IEHLIST                               PAGE    2               
+# -                                                                                                                        
+# 0---------------DATA SET NAME----------------  SER NO  SEQNO  DATE.CRE  DATE.EXP  DATE.REF  EXT DSORG RECFM OPTCD BLKSIZE
+#  TSTRADM.TEST.PS                               USER20      1  2018.161    00.000  2018.161    1  PS   FB     00    27920 
+# 0SMS.IND   LRECL  KEYLEN  INITIAL ALLOC  2ND ALLOC    EXTEND       LAST BLK(TTTT-R) DIR.REM  F2 OR F3(C-H-R)  DSCB(C-H-R)
+#  S R E        80            TRKS              94            5MB            0    1                               0   1   7
+#  EATTR                                                                                                                   
+#  NS                                                                                                                      
+# 0            EXTENTS  NO  LOW(C-H)   HIGH(C-H)                                                                           
+#                         0 25611  3    25617  6                                                                           
+#                                  ----ON THE ABOVE DATA SET,THERE ARE         93 EMPTY TRACK(S).                          
+# 0 
+#
+# Example output from vtocls:
+#0---------------DATA SET NAME----------------  SER NO   SEQNO  DATE.CRE  DATE.EXP  DATE.REF  EXT DSORG RECFM OPTCD BLKSIZE SMS.IND   LRECL  KEYLEN  INITIAL ALLOC  2ND ALLOC EXTEND LAST BLK(T-R-L) DIR.REM F2 OR F3(C-H-R) DSCB(C-H-R) EATTR EXTENTS NO LOW(C-H)   HIGH(C-H)
+# TSTRADM.TEST.PS                               USER20	     1  2018.161    00.000  2018.161    1  PS   FB     00    27920  S  B      80	            TRKS             107      5MB                                           0   1   6   NS           0   25604 0    25611 2
+#
+
 if [[ $# -ne 1 ]]; then
 	echo "Syntax: vtocls <vol>"
 	exit 16
 fi
 vol=$1
 vol=$(echo ${vol} | tr '[:lower:]' '[:upper:]')
-vtoc=`echo "  LISTVTOC FORMAT,VOL=3390=${vol}\n" | mvscmd --pgm=iehlist --args='' --dd2=${vol},vol  --sysin=stdin --sysprint=*` 
+ds="SYS1.VVDS.V"${vol}
+vtoc=`mvscmd --pgm=iehlist --sysprint=* --dd=${ds} --sysin=stdin <<zzz
+ LISTVTOC FORMAT,VOL=3390=${vol}
+zzz`
 rc=$?
 if [[ ${rc} -gt 0 ]] ; then
-	echo "Volume ${vol} not found"
-	exit 16
+  echo "Volume ${vol} not found"
+  exit 16
 else 
-	echo "$vtoc" | awk '/0---------------DATA SET NAME----------------/ { processedHeader = 1 } !/0---------------DATA SET NAME----------------/ { if (processedHeader) { print; processedHeader=0 } }'
+  echo "$vtoc" | awk '
+	function chunk(str,start,end,lineNum) { return substr(str,(lineNum*121)+start+1,end-start+1); }
+	function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
+	function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
+	function trim(s)  { return rtrim(ltrim(s)); }
+	function trspace(s) { gsub(/[ ]/, "-", s); return s }
+	function rmspace(s) { gsub(/[ ]/, "", s); return s }
+	BEGIN {
+	BYTES_PER_TRACK=56664;
+	TRACKS_PER_CYL=15;
+	dsNameS=1; dsNameF=44; serNoS=47; serNoF=52; seqNoS=55; seqNoF=59; crtS=62; crtF=69; expS=72; expF=79; refS=82; refF=89;
+	extS=92; extF=94; dsOrgS=96; dsOrgF=100; recFmS=101; recFmF=108; optCdS=109; optCdF=113; blkSzS=114; blkSzF=120
+
+	smsIndS=1; smsIndF=7; lReclS=11; lReclF=15; keyLenS=18; keyLenF=23; pAllocS=26; pAllocF=38; sAllocS=41; sAllocF=59; 
+	lastTRLS=67; lastTRLF=81; dirRemS=84; dirRemF=90; f2OrF3S=93; f2OrF3F=107; dscbS=110; dscbF=120;
+	}
+	/0---------------DATA SET NAME----------------  SER NO  SEQNO  DATE.CRE  DATE.EXP  DATE.REF  EXT DSORG RECFM OPTCD BLKSIZE/ { 
+		printing=1; line=""; next; 	
+	}
+	/0SMS.IND   LRECL  KEYLEN  INITIAL ALLOC  2ND ALLOC/ { 
+		next; 
+	}
+	/ EATTR/ { 
+		next; 
+	}
+	/0            EXTENTS  NO  LOW(C-H)   HIGH(C-H)/ { 
+		next;
+	}
+	/1                              SYSTEMS SUPPORT UTILITIES/ {
+		next;
+	}
+	/ ----/ { 
+#		print line;
+		dsName=chunk(line,dsNameS,dsNameF,0);
+		serNo=chunk(line,serNoS,serNoF,0);
+		ref=chunk(line,refS,refF,0);
+		dsOrg=trim(chunk(line,dsOrgS,dsOrgF,0));
+		recFm=rmspace(chunk(line,recFmS,recFmF,0));
+		lRecl=trim(chunk(line,lReclS,lReclF,1));
+		blkSz=trim(chunk(line,blkSzS,blkSzF,0));
+		smsInd=trspace(chunk(line,smsIndS,smsIndF,1));
+		ext=chunk(line,extS,extF,0);
+		pAlloc=chunk(line,pAllocS,pAllocF,1);
+		sAlloc=chunk(line,sAllocS,sAllocF,1);
+		lastTRL=trim(chunk(line,lastTRLS,lastTRLF,1));
+		if (trim(pAlloc) == "TRKS" || trim(pAlloc) == "TRKS CONTIG") {
+			bytes=(BYTES_PER_TRACK*(sAlloc+1)*ext);
+		} else if (trim(pAlloc) == "CYLS") {
+			bytes=(BYTES_PER_TRACK*TRACKS_PER_CYL*(sAlloc+1)*ext);
+		} else {
+			bytes="?"
+		}
+		if (trim(smsInd) == "") {
+			smsInd = "      -";
+		}
+		keyLen=chunk(line,keyLenS,keyLenF,1);
+		if (trim(keyLen) == "") {
+			keyLen = "    -";
+		}
+		n=split(lastTRL,size,/[ ]+/);
+		if (n > 1) {
+			bytes = ((size[1]*BYTES_PER_TRACK) + (blkSz*size[2]))
+		} else {
+			bytes = "?"
+		}
+		printf "%44s %3s %3s %5d %15s\n", dsName, dsOrg, recFm, lRecl, bytes
+		printing=0;
+		next;
+	}
+	/-/ {
+		next;
+	}
+	// {
+		if (printing) {
+			line = line $0;
+		}
+		next;
+	}
+  '
 fi
 exit 0

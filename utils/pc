@@ -1,0 +1,4 @@
+catalog=$1
+mvscmdauth --pgm=IDCAMS --sysprint=* --sysin=stdin <<zzz 
+  LISTCAT CATALOG('${catalog}')
+zzz

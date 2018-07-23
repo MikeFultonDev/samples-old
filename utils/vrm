@@ -7,5 +7,16 @@ if [[ $# -ne 1 ]]; then
 fi
 vsam=$1
 vsam=$(echo ${vsam} | tr '[:lower:]' '[:upper:]')
-echo " DELETE ${vsam}\n" | mvscmdauth --pgm="IDCAMS" --args="MARGINS(2 72)" --sysin=stdin --sysprint=dummy
-exit $?
+out=/tmp/$$.out
+err=/tmp/$$.err
+echo " DELETE ${vsam}\n" | mvscmdauth --pgm="IDCAMS" --args="MARGINS(2 72)" --sysin=stdin --sysprint=* >${out} 2>${err}
+rc=$?
+if [[ ${rc} -gt 0 ]]; then
+  cat ${out} >&2
+  cat ${err} >&2
+else 
+  rm -f ${out}
+  rm -f ${err}
+fi
+
+exit ${rc}

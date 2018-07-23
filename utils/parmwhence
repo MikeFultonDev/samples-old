@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# parmwhence: find what dataset of the parmlib concatenation that a member comes from
+# e.g. parmwhence IEAVIPCS will print out what dataset the member IEAVIPCS is in
+#
+#set -x
+mem=`(echo $1 | tr '[:lower:]' '[:upper:]')`
+ds=`pparm`
+for d in $ds ; do
+	mls "${d}" 2>/dev/null | grep -q "${mem}"
+	if [ $? -eq 0 ]; then
+		echo ${d}
+		exit 0
+	fi
+done
+exit 1

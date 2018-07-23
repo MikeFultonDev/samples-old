@@ -1,0 +1,7 @@
+#
+# display all catalog'ed datasets by printing out the master catalog
+#
+#set -x
+loadmem=`opercmd 'display iplinfo' | awk ' /USED LOAD/ { print $4"("$2")" }'`
+master=`cat "//'${loadmem}'" | awk ' /SYSCAT / { print substr($2,11) }'` 
+pcatalog -l ${master} | awk '/CATALOG/ { system("pcatalog " $2); } /ALIAS/ { next; } // { print $2; }'

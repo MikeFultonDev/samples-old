@@ -5,13 +5,14 @@
 #set -x
 export ME=$0
 function syntax {
-  echo "${ME} [<options>]"
+  echo "${ME} [<options>] [<dataset name>]"
   echo " where <options> can be one or more of:"
+  echo " -a [verbose allocation output]"
+  echo " -v [verbose name output]"
   echo " -t<dataset type>"
   echo " -s<dataset primary size> (in bytes)"
   echo " -r<record format>"
   echo " -l<logical record length>"
-  echo " -n<dataset name>"
   echo " -d<data class name> [required for SMS-managed datasets. All VSAM datasets are SMS-managed]"
   echo " -k<key offset>:<key length> [required for Keyed Sequential Datasets (KSDS)]"
   echo " <dataset type> may be one of: KSDS, ESDS, RRDS, SEQ, PDS, PDSE. Default is a PDSE"
@@ -19,7 +20,7 @@ function syntax {
   echo "   Size may include a suffix of K (kilobytes), M (megabytes), G (gigabytes)"
   echo " <record format> is one of FB, VB, U. Default is FB"
   echo " <logical record length> is expressed in bytes (for VB, this includes the prefix area). Default is 80 for FB, 137 for FB, 0 for U"
-  echo " <dataset name> is the name of the dataset to allocate. Default is a temporary, generated name." 
+  echo " <dataset name> is the name of the dataset to allocate. If no dataset name is specified, a generated dataset name will be created." 
 } 
   
 function clean {
@@ -27,6 +28,7 @@ function clean {
   str=`print ${str} | tr [:lower:] [:upper:]`
   print "${str##[=]}"
 }
+
 function tempname {
   count=$1
   hlq=`hlq`
@@ -35,6 +37,7 @@ function tempname {
   process=`printf "P%7.7X" $$`
   echo "${hlq}.${time}.${counter}.${process}"
 }
+
 export INVALID=-1
 function getNumber {
   str=$1
@@ -42,7 +45,7 @@ function getNumber {
     (*[!0-9]*|'') value=${INVALID};;
     (*)           value=${str};;
   esac
-  echo ${value}
+  echo "${value}"
 }
 
 function normalizeSize {
@@ -63,7 +66,7 @@ function normalizeSize {
   if [ ${value} -eq ${INVALID} ]; then
     echo ${INVALID};
   else
-    if [[ ${smsinfo} == "" ]]; then
+    if [[ "${smsinfo}" == "" ]]; then
       if [ ${multiplier} -gt 1000 ]; then
         tracks=`echo $((${value} * (${multiplier} / ${BYTES_PER_TRACK}) + 1 ))`
       else
@@ -85,8 +88,10 @@ key=""
 keyoff=${INVALID}
 keylen=${INVALID}
 dataclass=""
+verboseName=0
+verboseAllocation=0
 
-while getopts ":t:s:r:l:n:k:d:" opt; do
+while getopts ":t:s:r:l:k:d:va" opt; do
   case ${opt} in
     t )
       type=`clean ${OPTARG}`
@@ -100,14 +105,17 @@ while getopts ":t:s:r:l:n:k:d:" opt; do
     l )
       lrecl=`clean ${OPTARG}`
       ;;
-    n )
-      name=`clean ${OPTARG}`
-      ;;
     k )
       key=`clean ${OPTARG}`
       ;;
     d )
       dataclass=`clean ${OPTARG}`
+      ;;
+    v )
+      verboseName=1
+      ;;
+    a )
+      verboseAllocation=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -116,6 +124,17 @@ while getopts ":t:s:r:l:n:k:d:" opt; do
       ;;
   esac
 done
+shift $(expr $OPTIND - 1 )
+if test $# -eq 1; then
+  name=`clean "${1}"`
+  shift
+fi 
+
+if test $# -gt 0; then
+  echo "Unexpected parameters specified: $*"
+  syntax
+  exit 16
+fi
 
 if [[ "${recfm}" == "FB" ]]; then
   recfm="RECFM(F,B)"
@@ -124,16 +143,16 @@ if [[ "${recfm}" == "FB" ]]; then
   fi
 elif [[ "${recfm}" == "VB" ]]; then 
   recfm="RECFM(V,B)"
-  if [[ "${lrecl} == "" ]]; then
+  if [[ "${lrecl}" == "" ]]; then
     lrecl="137"
   fi
 elif [[ "${recfm}" == "U" ]]; then
   recfm="RECFM(U)"
-  if [[ "${lrecl} == "" ]]; then
+  if [[ "${lrecl}" == "" ]]; then
     lrecl="0"
   fi
 else
-  echo "Invalid record format specified. Valid options are: FB, VB or U"
+  echo "Invalid record format specified. Valid options are: FB, VB or U" 
   exit 4
 fi
 
@@ -142,15 +161,15 @@ if [[ "${lrecl}" == "80" ]]; then
   blksize="BLKSIZE(3120)"
 elif [[ "${lrecl}" == "137" ]]; then
   lrecl="LRECL(${lrecl})"
-  blksize="1370"
+  blksize="BLKSIZE(1370)"
 elif [[ "${lrecl}" == "0" ]]; then
   lrecl="LRECL(${lrecl})"
-  blksize="32760"
+  blksize="BLKSIZE(32760)"
 else
   lrecl="LRECL(${lrecl})"
-  blksize="32760"
+  blksize="BLKSIZE(32760)"
 fi
-if [[ ${dataclass} == "" ]]; then
+if [[ "${dataclass}" == "" ]]; then
   lrecl="${lrecl} ${blksize}"
 fi
 
@@ -158,18 +177,22 @@ if [[ "${key}" != "" ]]; then
   keyoff=`echo ${key} | cut -d':' -f 1`
   keylen=`echo ${key} | cut -d':' -f 2`
 fi
-keyoff=`getNumber ${keyoff}`
-keylen=`getNumber ${keylen}`
+keyoff=`getNumber "${keyoff}"`
+keylen=`getNumber "${keylen}"`
 
 if [[ "${type}" == "PDSE" ]]; then
   type="DSNTYPE(LIBRARY,2) DSORG(PO)"
 elif [[ "${type}" == "PDS" ]]; then
   type="DSNTYPE(PDS) DSORG(PO)"
 elif [[ "${type}" == "SEQ" ]]; then
-  type="DSNTYPE(LARGE) DSNTYPE(EXTREQ) DSORG(PS)"
+  if [[ "${dataclass}" == "" ]]; then
+    type="DSNTYPE(BASIC) DSORG(PS)"
+  else 
+    type="DSNTYPE(LARGE) DSNTYPE(EXTREQ) DSORG(PS)"
+  fi
 elif [[ "${type}" == "KSDS" ]]; then
-  if [[ "${dataclass}" == "" || "${keyoff}" = "${INVALID}" || "${keylen}" = "${INVALID}" ]]; then
-    echo "You must specify a dataclass, key offset and ken length for a KSDS dataset"
+  if [[ "${dataclass}" == "" || "${keyoff}" == "${INVALID}" || "${keylen}" == "${INVALID}" ]]; then
+    echo "You must specify a dataclass, key offset and ken length for a KSDS dataset" >&2
     syntax
     exit 4
   fi
@@ -177,22 +200,22 @@ elif [[ "${type}" == "KSDS" ]]; then
   recfm=""
 elif [[ "${type}" == "ESDS" ]]; then
   if [[ "${dataclass}" == "" ]]; then
-    echo "You must specify a dataclass for an ESDS dataset"
+    echo "You must specify a dataclass for an ESDS dataset" >&2
     syntax
     exit 4
   fi
-  type="DSNTYPE(EXTREQ) RECORG(ES))"
+  type="DSNTYPE(EXTREQ) RECORG(ES)"
   recfm=""
 elif [[ "${type}" == "RRDS" ]]; then
   if [[ "${dataclass}" == "" ]]; then
-    echo "You must specify a dataclass for an RRDS dataset"
+    echo "You must specify a dataclass for an RRDS dataset" >&2
     syntax
     exit 4
   fi
   type="DSNTYPE(EXTREC) RECORG(RR)"
   recfm=""
 else
-  echo "Invalid dataset type specified. Valid options are: PDS,PDSE,SEQ,KSDS,ESDS,RRDS"
+  echo "Invalid dataset type specified. Valid options are: PDS,PDSE,SEQ,KSDS,ESDS,RRDS" >&2
   exit 4
 fi
 if [[ "${dataclass}" != "" ]]; then
@@ -201,11 +224,28 @@ fi
 if [[ "${name}" == "" ]]; then
   name=`tempname 000`   
 fi
-if [[ "${#name}" -gt 44 ]]; then
-  echo "Invalid name. Name must be less than 44 characters."
+if [[ ${#name} -gt 44 ]]; then
+  echo "Invalid name. Name must be less than 44 characters." >&2
   exit 4
 fi
-name="DATASET('${name}')"
+dsname="DATASET('${name}')"
 
 size=`normalizeSize ${size} ${dataclass}`
-echo "alloc ${name} ${type} ${recfm} ${lrecl} ${size} NEW CATALOG"
+err=/tmp/${name}.$$.err
+out=/tmp/${name}.$$.out
+cmd="alloc ${dsname} ${type} ${recfm} ${lrecl} ${size} NEW CATALOG"
+if [[ ${verboseAllocation} -gt 0 ]]; then
+  echo "${cmd}"
+fi
+tsocmd "${cmd}" >${out} 2>${err}
+rc=$?
+if [[ ${rc} -gt 0 ]]; then
+  cat ${err} >&2
+  cat ${out} 
+else 
+  if [[ ${verboseName} -gt 0 ]]; then
+    echo "${name}"
+  fi
+  rm -f ${out} ${err}
+fi
+exit ${rc}

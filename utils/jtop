@@ -1,11 +1,24 @@
 #
-# jtop: list the jobs in a simplistic 'top' like format (sorting not quite right yet)
+# jtop: list the jobs in a simplistic 'top' like format (sorted by CT column but can be sorted by any column by piping through sort)
 #
-x=`opercmd '$d condef' | grep DISPMAX` # msf - do some work to get the original dispmax
+orig=`opercmd '$d condef' | 
+	awk ' { 
+		ind = index($0, "DISPMAX="); 
+		if (ind > 0) { 
+			result=substr($0,ind+8); 
+			ind = index(result, ","); 
+			if (ind > 0) { 
+				result=substr(result,ind-1); 
+			} 
+			print result;
+		}
+	}'
+     `
+
 opercmd '$t condef,dispmax=1000000' >/dev/null 2>&1
 opercmd 'd jobs,all' >/tmp/out
 # set the condef back again...
-opercmd '$t condef,dispmax=100' >/dev/null 2>&1
+opercmd "\$t condef,dispmax=${orig}" >/dev/null 2>&1
 #
 #Sample raw output:
 #
@@ -45,18 +58,38 @@ cat /tmp/out | awk '
 function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
 function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
 function trim(s)  { return rtrim(ltrim(s)); }
-BEGIN { inHeader=0; firstLine=0; inLine=0; count=0; blank=" "; }
+BEGIN { inHeader=0; firstLine=0; inLine=0; count=0; blank=" "; dot="."; altct="CT>"; altet="ET>"; }
        /^[ ]+JOBS[ ]+M.S[ ]+TS USERS[ ]+SYSAS[ ]+INITS[ ]+ACTIVE.MAX VTAM[ ]+OAS/ { inHeader=1; next; }
        /^[ ]+PGN=/ { second=trim($0); next; }
-       /^[ ]+CT=/  { third=trim($0); next; }
-       /^[ ]+WUID=/  { fourth=trim($0); next; }
+       /^[ ]+CT=/  	{ 
+				third=trim($0); 
+				if (substr(third,11,1) != "S") {
+					third=altct substr(third,4);
+				}
+				if (substr(third,19,1) == "." || substr(third,17,8) == "NOTAVAIL") {
+					third=substr(third,1,13) altet substr(third,17);
+				}
+				next; 
+			}
+       /^[ ]+WUID=/  	{ 
+				fourth=trim($0); 
+				fourth=sprintf("%-29s", fourth)
+				if (substr(fourth,15,1) == " ") {
+					fourth=substr(fourth,1,14) dot substr(fourth,16)
+				}
+				next; 
+			}
        /^[ ]+WKL=/  { fifth=trim($0); next; }
        /^[ ]+RGP=/  { sixth=trim($0); firstLine=1; print first blank second blank third blank fourth blank fifth blank sixth; next; }
        /^[ ]+/ 	{ 
 			if (inHeader) { 
 				jobInfo=$0; inHeader=0; firstLine=1; next; 
 			} else if (firstLine) { 
-				first=trim($0); inLine=1; firstLine=0; next; 
+				first=trim($0); 
+				if (substr(first,20,1) == " ") { 
+					first=substr(first,1,18) dot substr(first,20); 
+				} 
+				inLine=1; firstLine=0; next; 
 			}
 		}
-     ' | sort -r -k 12.4
+     ' | sort -b -r -k 12.1
