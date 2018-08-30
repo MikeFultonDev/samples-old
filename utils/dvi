@@ -26,16 +26,6 @@ function tempname {
   echo "${hlq}.${time}.${counter}.${process}"
 }
 
-export INVALID=-1
-function getNumber {
-  str=$1
-  case ${str} in
-    (*[!0-9]*|'') value=${INVALID};;
-    (*)           value=${str};;
-  esac
-  echo "${value}"
-}
-
 verbose=0
 name=""
 
