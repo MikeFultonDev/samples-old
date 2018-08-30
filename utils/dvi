@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# dvi - edit text-based VB/FB files
+#
+#set -x
+export ME=$0
+function syntax {
+  echo "${ME} [<options>] <dataset name> [<member>]"
+  echo " where <options> can be one or more of:"
+  echo " -v [verbose output]"
+  echo " -q [quiet output (default)]"
+} 
+  
+function clean {
+  str=$1
+  str=`print ${str} | tr [:lower:] [:upper:]`
+  print "${str##[=]}"
+}
+
+function tempname {
+  count=$1
+  hlq=`hlq`
+  time=`date | awk ' { print $4; }' | awk -F':' '{ print "T"$1$2$3; }'`
+  counter="RA${count}"
+  process=`printf "P%7.7X" $$`
+  echo "${hlq}.${time}.${counter}.${process}"
+}
+
+export INVALID=-1
+function getNumber {
+  str=$1
+  case ${str} in
+    (*[!0-9]*|'') value=${INVALID};;
+    (*)           value=${str};;
+  esac
+  echo "${value}"
+}
+
+verbose=0
+name=""
+
+while getopts ":vq" opt; do
+  case ${opt} in
+    v )
+      verbose=1
+      ;;
+    q )
+      verbose=0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      syntax
+      exit 4
+      ;;
+  esac
+done
+
+shift $(expr $OPTIND - 1 )
+if [[ $# -eq 0 ]]; then
+  echo "Need to specify a dataset to edit"     
+  syntax
+  exit 16
+fi
+
+name=`clean "${1}"`
+member=""
+shift
+if [[ $# -eq 1 ]]; then
+  member=`clean "${1}"`
+  shift
+fi
+    
+if [[ $# -gt 1 ]]; then
+  echo "Unexpected parameters specified: $*"
+  syntax
+  exit 16
+fi
+
+err=/tmp/${name}.$$.err
+out=/tmp/${name}.$$.out
+
+if [[ "${member}" == "" ]]; then 
+  tmp=/tmp/${name}.$$.tmp
+  cp "//'${name}'" ${tmp}
+else
+  tmp=/tmp/${name}.${member}.$$.tmp
+  cp "//'${name}(${member})'" ${tmp}
+fi
+rc=$?
+if [[ ${rc} -gt 0 ]]; then
+  if [[ ${verbose} -gt 0 ]]; then
+    echo "Unable to copy dataset to temporary zFS file." 
+  fi
+  exit ${rc}
+fi
+vi -v ${tmp}
+rc=$?
+if [[ ${rc} -gt 0 ]]; then
+  if [[ ${verbose} -gt 0 ]]; then
+    echo "Return code ${rc} while editing temporary zFS file: ${tmp}. Temporary file not deleted."
+  fi
+  exit ${rc}
+fi
+
+if [[ "${member}" == "" ]]; then 
+  tso "oget '${tmp}' '${name}'" 2>/dev/null
+else
+  tso "oget '${tmp}' '${name}(${member})'" 2>/dev/null
+fi
+rc=$?
+if [[ ${rc} -gt 0 ]]; then
+  if [[ ${verbose} -gt 0 ]]; then
+    echo "Unable to copy temporary zFS file back to dataset after editing." 
+    echo "Temporary file: ${tmp} not deleted."
+  fi
+  exit ${rc}
+fi
+
+exit ${rc}
