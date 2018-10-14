@@ -16,6 +16,29 @@ currdate=date("C")
 currtime=time("N")
 
 select
+  when op='R' then do
+    yesterdate=currdate
+    currhour=substr(currtime, 1, 2)
+    currminfirstdigit=substr(currtime, 4, 1)
+    if (currminfirstdigit = '0') then do 
+      prevminutes=':' || '5' || substr(currtime, 5)
+      if (currhour = '01') then do
+        prevtime = "23" || prevminutes
+        yesterdate=currdate-1
+      end
+      else do
+        prevtime = currhour || prevminutes
+      end
+    end
+      else do
+        prevminfirstdigit = currminfirstdigit - 1
+        prevminutes=':' || prevminfirstdigit || substr(currtime, 5)
+        prevtime = currhour || prevminutes
+      end
+
+    isflogstartdate=date("U",yesterdate,"C")
+    isflogstarttime=prevtime
+  end
   when op='H' then do
     currhour=substr(currtime, 1, 2)
     if (currhour = '01') then do
@@ -56,6 +79,7 @@ select
   end
   otherwise do
     say 'Syntax: prtcon h|d|w|m|y|a|*'
+    say '  r....(recent) last ten minutes of data written to the log'
     say '  h....last hour of data written to the log'
     say '  d....last day of data written to the log'
     say '  w....last week of data written to the log'
