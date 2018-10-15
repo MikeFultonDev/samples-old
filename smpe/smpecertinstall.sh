@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+#set -x
 me=`hlq`
 cd bin
 for f in *; do

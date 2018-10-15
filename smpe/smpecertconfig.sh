@@ -4,10 +4,10 @@
 #set -x
 function tsoPrintError {
 	cmd="$@"
-	tsocmd "$cmd" >/dev/null 2>&1
-	if [ $? -gt 0 ]; then
+#	tsocmd "$cmd" >/dev/null 2>&1
+#	if [ $? -gt 0 ]; then
 		tsocmd "$cmd" 
-	fi
+#	fi
 	return $?
 }
 
@@ -15,7 +15,7 @@ function defineIfRequired {
 	racfprofile $1 $2 2>/dev/null >/dev/null
 	if [ $? -gt 0 ]; then
 		echo "Creating profile: $1 $2"
-		tsoPrintError "RDEFINE ${class} ${profile} UACC(NONE)"
+		tsoPrintError "racfprofile $1 $2"
 	fi
 }
 function addPermission {
@@ -24,7 +24,7 @@ function addPermission {
 me=`hlq` #not whoami - it can give an odd answer for uid 0
 ringOwner="${me}"
 certOwner="${me}"
-certDataset="${me}.SMPE.CERT"
+certDataset="${me}.SMPE.CRT"
 certLabel="GeoTrust Global CA"
 export SMPE_RING="SMPERING"
 export SMPE_LABEL="SMPE Client Certificate"
