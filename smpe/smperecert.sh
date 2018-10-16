@@ -12,8 +12,8 @@ function tsoPrintError {
 }
 
 me=`hlq` #not whoami - it can give an odd answer for uid 0
-certCADataset="${me}.SMPE.DIGICERT.CA.CERT"
-certG2Dataset="${me}.SMPE.DIGICERT.G2.CERT"
+certCADataset="${me}.SMPE.DIGICERT.CA.CRT"
+certG2Dataset="${me}.SMPE.DIGICERT.G2.CRT"
 CALabel="DigiCert Global Root CA"
 G2Label="DigiCert Global Root G2"
 
