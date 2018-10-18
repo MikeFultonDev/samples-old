@@ -48,32 +48,30 @@ cat >${tmpCntlHFS} <<zzz
 zzz
 
 LOG=${TMP}/$$.smplog
-LOG="dummy"
-#touch ${LOG}
+touch ${LOG}
 
 OUT=${TMP}/$$.smpout
 touch ${OUT}
 
 RPT=${TMP}/$$.smprpt
-RPT="dummy"
-#touch ${RPT}
+touch ${RPT}
 
 NTS=${TMP}/$$.smpnts
 
 PRINT=${TMP}/$$.smpsysprint
-#touch ${PRINT}
-PRINT="dummy"
+touch ${PRINT}
 
 rm -rf ${NTS}
 mkdir ${NTS}
 
-mvscmdauth --pgm=gimsmp --smpcsi=${SMPE_CSI_DATASET} --smpwkdir=${TMP} --smpnts=${NTS} --smplog=${LOG} --smpout=${OUT} --smprpt=${RPT} --bpxprint=* --sysprint=* \
- --server=${tmpOrderHFS} --client=${tmpClientHFS} --smpcntl=${tmpCntlHFS} >${PRINT}
-
-if [ $? -ne 0 ]; then
+mvscmdauth --pgm=gimsmp --smpcsi=${SMPE_CSI_DATASET} --smpwkdir=${TMP} --smpnts=${NTS} --smplog=${LOG},mod --smpout=${OUT},mod --smprpt=${RPT},mod --bpxprint=* --sysprint=* --server=${tmpOrderHFS} --client=${tmpClientHFS} --smpcntl=${tmpCntlHFS} >${PRINT}
+rc=$?
+if [ ${rc} -ne 0 ]; then
 	cat ${OUT}
 fi
 
 rm ${tmpOrderHFS} ${tmpClientHFS} ${tmpCntlHFS}
 rm -rf ${OUT} ${NTS}
+
+exit ${rc}
 
