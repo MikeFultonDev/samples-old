@@ -1,4 +1,5 @@
 #
+#!/bin/sh
 # List non-VSAM datasets that start with a prefix.
 # If '-l' is specified, the long list form, showing recfm, lrecl, blksize, dsorg, volumes is shown
 # If you want to sort by time (for example), pipe it to sort, e.g. sort -b -k2 (TBD - add 't' option and perhaps others)
@@ -13,7 +14,7 @@ ListBasic() {
  else
    pattern="ALL ENTRIES($1)"
  fi
- echo " LISTCAT -\n ${pattern}\n" | 
+ echo " LISTCAT ${pattern}" | 
    mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
    awk '/0NONVSAM/ { print $3 }'
 )
