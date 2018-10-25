@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# dlsraw: List datasets that match a pattern following standard shell rules (not ISPF rules)
+# *, ?, [ are 'special' characters
+#
+#set -x
+set -o noglob
+
+dbg() {
+	if [[ ${debug} -eq 1 ]]; then
+		echo $*
+	fi
+}
+
+ListBasic() {
+	if [ "${1}" = "*" ]; then
+		dlsall 
+	else 
+		if [ "$2" = "*" ]; then
+	 		pattern="LEVEL($1) HISTORY"
+		else
+			pattern="ALL ENTRIES($1)"
+		fi
+		echo " LISTCAT -\n ${pattern}\n" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | dsfilter
+	fi
+}
+
+debug=0
+verbose=0
+while getopts ":vd" opt; do
+  case ${opt} in
+    d )
+      debug=1
+      ;;
+    v )
+      verbose=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      syntax
+      exit 4
+      ;;
+  esac
+done
+shift $(expr $OPTIND - 1 )
+if [ $# -ne 1 ]; then
+	echo 'Syntax: dlsraw <dataset-pattern>'
+	echo 'Example 1: dlsraw IBMUSER.MVSCMD.* : list all datasets that start with IBMUSER.MVSCMD'
+	echo 'Example 2: dlsraw IBMUSER.MVS*.* : list all datasets that start with IBMUSER.MVS*'
+	echo 'Example 3: dlsraw *.JCL : list all datasets that have a low level qualifier of JCL'
+	exit 16
+fi
+
+# 
+# datasetpattern - uppercased version of input
+# filename - get rid of any 'path' info at the start (maybe this can be dropped)
+# extension - stuff after the last '.'                
+# file - stuff before the last '.'
+# hlq - stuff up to the first '.'
+# prefix - stuff up to the first wildcard character from the filename
+# quals - stuff up to the first '.' from the prefix 
+datasetpattern=$(echo ${1} | tr '[:lower:]' '[:upper:]');
+filename=$(basename -- "$datasetpattern") 
+extension="${filename##*.}" 
+file="${filename%.*}" 
+hlq="${filename%%.*}"
+prefix="${filename%%[\[\*\?]*}"
+quals="${prefix%.*}"
+
+if [[ "${prefix}" == "${filename}" ]]; then
+	dbg "retrieve one specific file ${filename}"
+	list=`ListBasic ${prefix} *`
+else 
+	if [[ "${quals}" == "" || "${quals}" == "${prefix}" ]]; then 
+		dbg "retrieve all datasets then filter for pattern ${datasetpattern}"
+		list=`ListBasic *`
+	else
+		dbg "retrieve ${quals} then filter for pattern ${datasetpattern}"
+		list=`ListBasic ${quals} *`
+	fi
+	regexpattern=$(echo "${datasetpattern}" | sed -e 's/\./\\./g' | sed -e 's/\*/\.\*/g' | sed -e 's/?/./g')
+	echo "${list}" | awk -vregexpattern="${regexpattern}" '// { if ($2 ~ "^"regexpattern) { print $1 " " $2 }; }'
+fi
