@@ -1,13 +1,8 @@
+#!/bin/sh
 #
-# dlsall: Display -all- datasets on all volumes, sorted
-# This can take awhile to run. This could print out a -lot- of data
+# display all catalog'ed datasets by printing out the master catalog
 #
 #set -x
-vols=`pvol | awk ' {print substr($0,68,6)}'`
-dall=''
-for v in $vols; do
-	echo "Reading volume: ${v}"
-	ds=`vtocls $v | awk ' { print $1 } '`
-	dall="${dall} ${ds}"
-done
-echo "${dall}" | sort
+loadmem=`opercmd 'display iplinfo' | awk ' /USED LOAD/ { print $4"("$2")" }'`
+master=`cat "//'${loadmem}'" | awk ' /SYSCAT / { print substr($2,11) }'` 
+pcatalog ${master} | awk '/CATALOG/ { system("pcatalog " $2); } /ALIAS/ { next; } // { print $1 " " $2; }'

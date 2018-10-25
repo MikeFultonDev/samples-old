@@ -1,0 +1,13 @@
+#
+# dlsall: Display -all- datasets on all volumes, sorted
+# This can take awhile to run. This could print out a -lot- of data
+#
+#set -x
+vols=`pvol | awk ' {print substr($0,68,6)}'`
+dall=''
+for v in $vols; do
+	echo "Reading volume: ${v}"
+	ds=`vtocls $v | awk ' { print $1 } '`
+	dall="${dall} ${ds}"
+done
+echo "${dall}" | sort

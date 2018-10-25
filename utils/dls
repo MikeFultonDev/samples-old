@@ -11,7 +11,7 @@ ListBasic() {
  if [ "$2" = "*" ]; then
    pattern="LEVEL($1) HISTORY"
  else
-   pattern="ALL ENTRIES($1) HISTORY"
+   pattern="ALL ENTRIES($1)"
  fi
  echo " LISTCAT -\n ${pattern}\n" | 
    mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
@@ -46,8 +46,9 @@ ListDetails() {
 
 
 if [ -z "$1" ]; then
-	echo 'Syntax: dls <dataset-prefix>'
-	echo 'Example: dls IBMUSER.MVSCMD'
+	echo 'Syntax: dls [-l] <dataset-prefix>'
+	echo 'Example 1: dls IBMUSER.MVSCMD.* : list all datasets that start with IBMUSER.MVSCMD'
+	echo 'Example 2: dls -l IBMUSER.MVSCMD.C : list the details of the dataset IBMUSER.MVSCMD.C'
 	exit 16
 fi
 if [ "$1" = "-l" ]; then 
