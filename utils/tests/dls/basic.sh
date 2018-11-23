@@ -20,7 +20,10 @@ dsAttr5="-tseq -rVB"
 ds6="PDS.DEFAULT.FB80"
 dsAttr6="-tpds -rFB"
 
-drm -f `dls ${thlq}.*`
+datasets=`dls ${thlq}.*`
+if [[ "${datasets}" != "" ]]; then
+	drm -f ${datasets}
+fi
 ds1=`qualdsname ${thlq} ${ds1}`
 ds2=`qualdsname ${thlq} ${ds2}`
 ds3=`qualdsname ${thlq} ${ds3}`
@@ -62,6 +65,10 @@ ${dsP6} ${today} ${dsPAttr6} ${vol}"
 actual=`echo "${actual}" | sort`
 expected=`echo "${expected}" | sort`
 if [[ "${actual}" = "${expected}" ]]; then
+	datasets=`dls ${thlq}.*`
+	if [[ "${datasets}" != "" ]]; then
+	        drm -f ${datasets}
+	fi
 	pass "${DESC}"
 else
 	fail "${DESC}" "${expected}" "${actual}"
