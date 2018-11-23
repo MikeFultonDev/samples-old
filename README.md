@@ -1,9 +1,11 @@
 # samples
 
-This repository contains utilities to make it easy to work with MVS resources from the Unix System Services shell environment.
+This repository contains utilities to make it easy to work with MVS resources from the Unix System Services shell.
 
 The common utilities are in the utils directory. These utilities require the MVSCommand programs, specifically:
- mvscmd, mvscmdauth, opercmd
+
+ * mvscmd / mvscmdauth
+ * opercmd
  
 Here is a short description of each utility, by category
 
