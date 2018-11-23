@@ -17,11 +17,11 @@ ListBasic() {
 		dlsall 
 	else 
 		if [ "$2" = "*" ]; then
-	 		pattern="LEVEL($1) HISTORY"
+	 		pattern="LEVEL($1)"
 		else
 			pattern="ALL ENTRIES($1)"
 		fi
-		echo " LISTCAT -\n ${pattern}\n" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | dsfilter
+		echo " LISTCAT ${pattern}" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | dsfilter
 	fi
 }
 
@@ -70,6 +70,7 @@ quals="${prefix%.*}"
 if [[ "${prefix}" == "${filename}" ]]; then
 	dbg "retrieve one specific file ${filename}"
 	list=`ListBasic ${prefix} *`
+	echo "${list}"
 else 
 	if [[ "${quals}" == "" || "${quals}" == "${prefix}" ]]; then 
 		dbg "retrieve all datasets then filter for pattern ${datasetpattern}"
