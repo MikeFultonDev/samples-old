@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # List VSAM datasets that start with a prefix
 # For details, add 'ALL' and switch to ENTRIES and specify one dataset...

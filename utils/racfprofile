@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Script to return users and their access for a profile
+# Script to return users and their access for a class/profile
+# e.g. racfprofile facility IRR.DIGTCERT.ADD prints the list of users and their access for the class/profile
 # Returns 0 if profile defined. Non-Zero otherwise
 #
 #set -x
