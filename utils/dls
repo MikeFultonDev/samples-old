@@ -1,4 +1,3 @@
-#
 #!/bin/sh
 # List non-VSAM datasets that start with a prefix.
 # If '-l' is specified, the long list form, showing recfm, lrecl, blksize, dsorg, volumes is shown
@@ -66,7 +65,7 @@ if [ $# -ne 1 ]; then
 	exit 16
 fi
 
-if [ "${details}" == 1 ]; then 
+if [ ${details} -eq 1 ]; then 
 	files=`ListBasic "$*"`
 	for f in $files; do
 		ListDetails "$f"

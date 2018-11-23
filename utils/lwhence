@@ -1,2 +1,0 @@
-# Find the dataset in the LinkList that a module comes from
-opercmd "setprog lnklst,test,name=current,modname=$1" | awk '/IN DATA SET/ { print $4; exit(0); } /CSV503I MODULE/ { print $6 " could not be found."; exit(8); }'

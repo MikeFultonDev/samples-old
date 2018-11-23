@@ -3,6 +3,9 @@ hlq=`hlq`
 function dsname {
   echo ${hlq}.TEST.$1
 }
+function qualdsname {
+  echo $1.TEST.$2
+}
 
 function blankpad {
   str=$1
