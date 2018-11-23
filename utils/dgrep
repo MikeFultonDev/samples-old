@@ -37,9 +37,10 @@ while getopts ":invd" opt; do
 done
 shift $(expr $OPTIND - 1 )
 if [ $# -ne 2 ]; then
-	echo 'dgrep [options] <str> <dataset-pattern>'
+	echo 'dgrep [<options>] <str> <dataset-pattern>'
 	echo '  where <options> is one or more of:'
 	echo '  -i: ignore case'
+	echo '  -i: display line numbers'
 	echo '  -v: verbose'
 	echo '  -d: debug'
         echo '  Example: dgrep rexx IBMUSER.MVSCMD.TSO.* (search for rexx (case sensitive) in all datasets of the pattern IBMUSER.MVSCMD.TSO.*)'
