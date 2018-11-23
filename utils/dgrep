@@ -2,7 +2,6 @@
 # Search all datasets matching the pattern for a string, e.g. dgrep IEFPROC sys1.* would search for IEFPROC in all datasets matching SYS1.*
 # Datasets may be sequential datasets or partitioned datasets. If the dataset is partitioned, the search will go across all members of the dataset.
 #
-
 verbose() {
 	if [[ ${verbose} -eq 1 ]]; then
 		echo $*
@@ -34,8 +33,13 @@ while getopts ":ivd" opt; do
 done
 shift $(expr $OPTIND - 1 )
 if [ $# -ne 2 ]; then
-	echo 'dgrep <str> <dataset-pattern>'
-        echo '  example: dgrep rexx IBMUSER.MVSCMD.TSO.* (search for rexx (case insensitive) inn all datasets of the pattern IBMUSER.MVSCMD.TSO.*)'
+	echo 'dgrep [options] <str> <dataset-pattern>'
+	echo '  where <options> is one or more of:'
+	echo '  -i: ignore case'
+	echo '  -v: verbose'
+	echo '  -d: debug'
+        echo '  Example: dgrep rexx IBMUSER.MVSCMD.TSO.* (search for rexx (case sensitive) in all datasets of the pattern IBMUSER.MVSCMD.TSO.*)'
+        echo '  Example: dgrep -i Hello IBMUSER.MVSCMD.*.COB* (search for Hello (case insensitive) in all datasets of the pattern IBMUSER.MVSCMD.*.COB*)'
 	exit 16
 fi
 
@@ -53,9 +57,10 @@ for dataset in ${datasets}; do
 	echo "SRCHFOR '"${str}"'" | 
          mvscmd --pgm=isrsupc --args=${args} --newdd=${dataset} --outdd=* --sysin=stdin | 
          awk '!/  ISRSUPC/' | 
-	 awk '/LINE-#  SOURCE SECTION                    SRCH DSN:/ { dsn=$6; next; } 
+	 awk 'BEGIN {mem=""; dsn="";}
+              /LINE-#  SOURCE SECTION                    SRCH DSN:/ { dsn=$6; next; } 
 	      / --------- STRING\(S\) FOUND -------------------/ { mem=$1; next; }
-	      // { if ($1 != "") { print dsn"("mem"):"$0; }}'
+	      // { if ($1 != "") { if (mem != "") { printf "%-44s %-8s %s\n", dsn, mem, $0; } else { printf "%-53s %s\n", dsn, $0; } }}'
 	     
 
 done
