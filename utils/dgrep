@@ -13,10 +13,14 @@ set -o noglob
 ignorecase=0
 debug=0
 verbose=0
-while getopts ":ivd" opt; do
+numbers=0
+while getopts ":invd" opt; do
   case ${opt} in
     d )
       debug=1
+      ;;
+    n )
+      numbers=1
       ;;
     i )
       ignorecase=1
@@ -55,12 +59,31 @@ datasets=`dlsraw ${datasetpattern} | awk '/NONVSAM/ { print $2 }' `
 for dataset in ${datasets}; do
 	verbose "Searching dataset: " ${dataset}
 	echo "SRCHFOR '"${str}"'" | 
-         mvscmd --pgm=isrsupc --args=${args} --newdd=${dataset} --outdd=* --sysin=stdin | 
-         awk '!/  ISRSUPC/' | 
-	 awk 'BEGIN {mem=""; dsn="";}
-              /LINE-#  SOURCE SECTION                    SRCH DSN:/ { dsn=$6; next; } 
-	      / --------- STRING\(S\) FOUND -------------------/ { mem=$1; next; }
-	      // { if ($1 != "") { if (mem != "") { printf "%-44s %-8s %s\n", dsn, mem, $0; } else { printf "%-53s %s\n", dsn, $0; } }}'
-	     
-
+        	mvscmd --pgm=isrsupc --args=${args} --newdd=${dataset} --outdd=* --sysin=stdin | 
+         		awk '!/  ISRSUPC/' | 
+	 		awk -vnumbers="${numbers}" '
+				BEGIN {mem=""; dsn="";}
+              			/LINE-#  SOURCE SECTION                    SRCH DSN:/ { 
+					dsn=$6; next; 
+				} 
+	      			/ --------- STRING\(S\) FOUND -------------------/ { 
+					mem=$1; next; 
+				}
+				// { 
+					if ($1 != "") { 
+						line=substr($0,1,7); 
+						text=substr($0,8); 
+						if (numbers) {
+							out = line":"text;
+						} else {
+							out = text;
+						}
+						if (mem != "") { 
+							printf "%-44s %-8s %s\n", dsn, mem, out; 
+						} else { 
+							printf "%-53s %s\n", dsn, out; 
+						} 
+					}
+				}
+			'
 done
