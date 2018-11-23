@@ -25,11 +25,11 @@ Here is a short description of each utility, by category
 
 **dgrep**: analagous to the grep command, dgrep searches partitioned datasets and sequential datasets for a string.
 
-**dzip**: analagous to the zip command, dzip creates a blob that can be transferred (via a binary protocol) to another z/OS system.
+**dzip**: analagous to the zip command, dzip creates a blob you can transfer (via a binary protocol) to another z/OS system.
 
 **dunzip**: analagous to the unzip command, dunzip unzips a blob previously created by dzip.
 
-**dsed**: analagous to the sed command, dsed provides rudimentary support for basic search and replace of a string in a dataset.
+**dsed**: analagous to the sed command, dsed provides basic support for search and replace of a string in a dataset.
 
 **dtouch**: analagous to the touch command, dtouch provides a way to allocate a dataset.
 
