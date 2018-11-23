@@ -6,7 +6,36 @@ function syntax {
 	echo "Syntax: drm [-f] <fully-qualified dataset>"
 	echo " -f : if the dataset does not exist, do not issue a message"   
 }
+function drmone {
+	ds=$1
+	ds=$(echo ${ds} | tr '[:lower:]' '[:upper:]')
+	name="del$$"
+	err=/tmp/${name}.err
+	out=/tmp/${name}.out
+	tsocmd "DELETE '${ds}'" >$out 2>$err
+	rc=$?
+	if [[ ${rc} -gt 0 ]]; then
+ 		if [[ ${force} -gt 0 ]]; then
+    			grep -q "IDC3012I" <$out # look for 'dataset not found' message
+    			if [[ $? -eq 1 ]]; then
+      				cat $err
+      				cat $out
+    			else
+      				rc=0
+    			fi
+  		else 
+    			cat $err
+    			cat $out
+  		fi
+	else
+  		rm -f $out
+  		rm -f $err
+	fi
+	return ${rc}
+}
+
 #set -x
+set -o noglob
 force=0
 while getopts ":f" opt; do
   case ${opt} in
@@ -22,32 +51,15 @@ while getopts ":f" opt; do
   esac
 done
 
-if [[ $# -ne 1 ]]; then
+if [[ $# -eq 0 ]]; then
 	syntax
 	exit 4
 fi
-ds=$1
-ds=$(echo ${ds} | tr '[:lower:]' '[:upper:]')
-name="del$$"
-err=/tmp/${name}.err
-out=/tmp/${name}.out
-tsocmd "DELETE '${ds}'" >$out 2>$err
-rc=$?
-if [[ ${rc} -gt 0 ]]; then
-  if [[ ${force} -gt 0 ]]; then
-    grep -q "IDC3012I" <$out # look for 'dataset not found' message
-    if [[ $? -eq 1 ]]; then
-      cat $err
-      cat $out
-    else
-      rc=0
-    fi
-  else 
-    cat $err
-    cat $out
-  fi
-else
-  rm -f $out
-  rm -f $err
-fi
-exit ${rc}
+
+for f in $*; do
+	drmone "${f}"
+	rc=$?
+	if [[ ${rc} -gt 0 ]]; then
+		exit $?
+	fi
+done

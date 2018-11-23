@@ -2,18 +2,60 @@
 # Search all datasets matching the pattern for a string, e.g. dgrep IEFPROC sys1.* would search for IEFPROC in all datasets matching SYS1.*
 # Datasets may be sequential datasets or partitioned datasets. If the dataset is partitioned, the search will go across all members of the dataset.
 #
-if [ -z "$2" ]; then
+
+verbose() {
+	if [[ ${verbose} -eq 1 ]]; then
+		echo $*
+	fi
+}
+
+set -o noglob
+#set -x
+ignorecase=0
+debug=0
+verbose=0
+while getopts ":ivd" opt; do
+  case ${opt} in
+    d )
+      debug=1
+      ;;
+    i )
+      ignorecase=1
+      ;;
+    v )
+      verbose=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      syntax
+      exit 4
+      ;;
+  esac
+done
+shift $(expr $OPTIND - 1 )
+if [ $# -ne 2 ]; then
 	echo 'dgrep <str> <dataset-pattern>'
         echo '  example: dgrep rexx IBMUSER.MVSCMD.TSO.* (search for rexx (case insensitive) inn all datasets of the pattern IBMUSER.MVSCMD.TSO.*)'
-        exit 16
-else
-	str=$1;
-	datasetpattern=$2;
-	datasetpattern=$(echo ${datasetpattern} | tr '[:lower:]' '[:upper:]')
+	exit 16
 fi
-datasets=`echo " LISTCAT -\n ENTRIES("${datasetpattern}")\n" | mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | awk '/0NONVSAM/ { print $3 }' `
+
+str=$1;
+datasetpattern=$2;
+datasetpattern=$(echo ${datasetpattern} | tr '[:lower:]' '[:upper:]')
+
+args="SRCHCMP,IDPRFX,NOSUMS,LONGLN,NOPRTCC"
+if [[ ${ignorecase} -eq 1 ]]; then
+	args=${args}",ANYC"
+fi
+datasets=`dlsraw ${datasetpattern} | awk '/NONVSAM/ { print $2 }' `
 for dataset in ${datasets}; do
-	echo "SRCHFOR '"${str}"'\n" | 
-         mvscmd --pgm=isrsupc --args='SRCHCMP,ANYC,IDPRFX,NOSUMS,LONGLN,NOPRTCC' --newdd=${dataset} --outdd=* --sysin=stdin | 
-         awk '!/  ISRSUPC/';
+	verbose "Searching dataset: " ${dataset}
+	echo "SRCHFOR '"${str}"'" | 
+         mvscmd --pgm=isrsupc --args=${args} --newdd=${dataset} --outdd=* --sysin=stdin | 
+         awk '!/  ISRSUPC/' | 
+	 awk '/LINE-#  SOURCE SECTION                    SRCH DSN:/ { dsn=$6; next; } 
+	      / --------- STRING\(S\) FOUND -------------------/ { mem=$1; next; }
+	      // { if ($1 != "") { print dsn"("mem"):"$0; }}'
+	     
+
 done

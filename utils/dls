@@ -8,24 +8,11 @@
 #set -x
 
 ListBasic() {
-(
- if [ "$2" = "*" ]; then
-   pattern="LEVEL($1) HISTORY"
- else
-   pattern="ALL ENTRIES($1)"
- fi
- echo " LISTCAT ${pattern}" | 
-   mvscmdauth --pgm=idcams --sysprint=* --sysin=stdin | 
-   awk '/0NONVSAM/ { print $3 }'
-)
+	dlsraw $* | awk '/NONVSAM/ { print $2 }'
 }
 
 ListDetails() {
- if [ "$2" = "*" ]; then
-   pattern="('$1') HISTORY LEVEL"
- else
-   pattern="('$1') HISTORY"
- fi
+ pattern="('$1') HISTORY"
  tsocmd "listds ${pattern}" 2>/dev/null |
    awk 'BEGIN { inHeaderA=0; inHeaderB=0; ds=""; vol=""; recfm=""; lrecl=""; blksize=""; created=""; dsorg=""; }
        /--RECFM-LRECL-BLKSIZE-DSORG-CREATED---EXPIRES---SECURITY/ { inHeaderA=1; next; }
@@ -44,33 +31,46 @@ ListDetails() {
       { inHeaderA=0; inHeaderB=0; ds=$1; vol=""; recfm=""; lrecl=""; blksize=""; dsorg=""; created=""; next; }
      '
 }
+verbose() {
+	if [[ ${verbose} -eq 1 ]]; then
+		echo $*
+	fi
+}
 
-
-if [ -z "$1" ]; then
+set -o noglob
+details=0
+debug=0
+verbose=0
+while getopts ":lvd" opt; do
+  case ${opt} in
+    d )
+      debug=1
+      ;;
+    l )
+      details=1
+      ;;
+    v )
+      verbose=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      syntax
+      exit 4
+      ;;
+  esac
+done
+shift $(expr $OPTIND - 1 )
+if [ $# -ne 1 ]; then
 	echo 'Syntax: dls [-l] <dataset-prefix>'
 	echo 'Example 1: dls IBMUSER.MVSCMD.* : list all datasets that start with IBMUSER.MVSCMD'
-	echo 'Example 2: dls -l IBMUSER.MVSCMD.C : list the details of the dataset IBMUSER.MVSCMD.C'
 	exit 16
 fi
-if [ "$1" = "-l" ]; then 
-	details=1
-	datasetpattern=$2;
-else
-	details=0
-	datasetpattern=$1;
-fi
-datasetpattern=$(echo ${datasetpattern} | tr '[:lower:]' '[:upper:]');
-filename=$(basename -- "$datasetpattern"); extension="${filename##*.}"; file="${filename%.*}"; 
 
-if [[ "${extension}" = "*" || "${extension}" = "**" ]]; then 
-	option="*"
-	pattern=${file}
+if [ "${details}" == 1 ]; then 
+	files=`ListBasic "$*"`
+	for f in $files; do
+		ListDetails "$f"
+	done
 else
-	option=""
-	pattern="${file}.${extension}"
-fi
-if [ ${details} -gt 0 ]; then
-	ListDetails "${pattern}" "${option}";
-else
-	ListBasic "${pattern}" "${option}";
+	ListBasic "$*"
 fi
