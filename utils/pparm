@@ -1,4 +1,5 @@
+#!/bin/sh
 #
-# Show the dynamic proclib (useful to determine where started tasks are searched for)
+# Show the dynamic parmlib
 #
 opercmd 'd parmlib' | awk '/ENTRY  FLAGS  VOLUME  DATA SET/ { afterHeader=1; next; } /[ ]+[0-9]+/ { if (afterHeader) { print $4; next } }'

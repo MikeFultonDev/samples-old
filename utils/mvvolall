@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # move all non-VSAM datasets from one volume to a new (specified) volume
 #

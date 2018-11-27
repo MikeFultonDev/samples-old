@@ -1,4 +1,5 @@
+#!/bin/sh
 #
-# Show the static proclib (useful to determine where started tasks are searched for)
+# pproc: Show the dynamic proclib (useful to determine where started tasks are searched for)
 #
-opercmd '$d proclib' | grep 'DSNAME=' | awk -F"[()=,]" '// { print $6; }' 
+opercmd '$d proclib' 

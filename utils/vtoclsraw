@@ -1,4 +1,5 @@
-#
+#!/bin/sh
+#vtoclsraw: list out the VTOC raw from LISTVTOC#
 
 if [[ $# -ne 1 ]]; then
 	echo "Syntax: vtoclsraw <vol>"

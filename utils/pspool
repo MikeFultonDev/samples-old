@@ -1,4 +1,5 @@
+#!/bin/sh
 #
-# print information about the spool
+# pspool: print information about the spool
 #
 opercmd '$d spool,percent>1'

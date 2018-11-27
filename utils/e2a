@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# e2a: convert file on disk in EBCDIC to ASCII
+#
+syntax() {
+	echo 'Syntax: e2a <file>: convert file from ebcdic to ascii'
+}
+
+if [ $# -ne 1 ]; then
+	echo 'Need to specify a file to convert'
+	syntax  
+	exit 16
+fi
+if [ ! -f $1 ]; then
+	echo 'File specified is not a regular file'
+	syntax
+	exit 16
+fi
+
+iconv -f IBM-1047 -t ISO8859-1 <$1 >/tmp/ascii.$$
+mv /tmp/ascii.$$ $1
+chtag -c ISO8859-1 $1
