@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# pproc: Show the dynamic proclib (useful to determine where started tasks are searched for)
-#
-opercmd '$d proclib' 

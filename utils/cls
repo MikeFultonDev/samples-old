@@ -1,7 +1,0 @@
-#!/bin/sh
-# cls: list catalogs on the system
-#
-loadmem=`opercmd 'display iplinfo' | awk ' /USED LOAD/ { print $4"("$2")" }'`
-master=`cat "//'${loadmem}'" | awk ' /SYSCAT / { print substr($2,11) }'`
-catalogs=`pcatalog ${master} | awk '/CATALOG/ { print $2; }'`
-echo "${catalogs}"

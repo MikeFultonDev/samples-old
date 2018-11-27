@@ -1,7 +1,0 @@
-#!/bin/sh
-# print the hlq for this TSO user to the screen
-#
-prefix=`tso profile 2>/dev/null | awk '/IKJ56688I/ { print $11; }'`
-prefix=${prefix#PREFIX(}
-prefix=${prefix%)}
-print ${prefix}

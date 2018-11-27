@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-#trimlines: read from stdin, scanning for the first <header> then <footer> and printing to stdout the lines in-between
-# Note: the header and footer can not have the '/' character in them
-#
-header=$1
-footer=$2
-
-awk -vheader="${header}" -vfooter="${footer}" '$0 ~ "^"header { scan=1; next } $0 ~"^"footer { scan=0 } { if (scan) { print $0 }}' 

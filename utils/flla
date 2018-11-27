@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-# flla: refresh the LLA
-#
-opercmd 'modify lla,refresh'

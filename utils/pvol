@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# print information about online volumes, stripping first 5 lines and last line of text info
-#
-#set -x
-volout=`opercmd 'd u,dasd,online,,65536' | tail -n +5`
-wcout=`print "${volout}" | wc -l `
-lines=`expr${wcout}- 1`
-print "${volout}" | head -n ${lines}

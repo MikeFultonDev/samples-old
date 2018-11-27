@@ -1,7 +1,0 @@
-#!/bin/sh
-#
-# print information about the CPUs on the system
-#
-cpuinfo=`opercmd 'd m=cpu'`
-
-echo "$cpuinfo"

@@ -1,5 +1,0 @@
-#!/bin/sh
-#
-#pll: print link list concatenation
-#
-opercmd 'd prog,lnklst,name=CURRENT'

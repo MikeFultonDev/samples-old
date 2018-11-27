@@ -1,4 +1,0 @@
-#
-# print the value of defined symbols on the system
-#
-opercmd 'd symbols' | tail +4
