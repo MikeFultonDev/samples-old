@@ -1,0 +1,6 @@
+export ZOS_USER="mfulton"
+export ZOS_HOST="plpsc.pok.ibm.com"
+export ZOS_GIT_USER="Mike Fulton"
+export ZOS_GIT_EMAIL="fultonm@ca.ibm.com"
+export ROCKET_TOOLS_DIR="/Users/fultonm/Documents/Development/RocketTools"
+export ZOS_TOOLS_ROOT="/u/mfulton/tools"
