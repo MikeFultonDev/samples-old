@@ -122,11 +122,11 @@ ssh "${ZOS_USER}@${ZOS_HOST}" "tsocmd \"ALTUSER TSTRADM OMVS(PROGRAM(${ZOS_TOOLS
 #
 echo "Install MVSCommand and sample utilities"
 ssh "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; cd ${ZOS_TOOLS_ROOT}; mkdir src; cd src; git clone https://github.com/mikefultonbluemix/MVSCommand.git; cd MVSCommand; ./build.sh"
-ssh "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; cd ${ZOS_TOOLS_ROOT}/src; git clone https://github.com/mikefultonbluemix/samples.git"
+ssh "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; cd ${ZOS_TOOLS_ROOT}/src; git clone https://github.com/mikefultonbluemix/MVSUtils.git"
 
 DEVPROFILE=${ASCIIWORKDIR}/.devprofile
 cat >${DEVPROFILE} <<zz
-export PATH=${ZOS_TOOLS_ROOT}/src/MVSCommand/bin:${ZOS_TOOLS_ROOT}/src/samples/utils:\${PATH}
+export PATH=${ZOS_TOOLS_ROOT}/src/MVSCommand/bin:${ZOS_TOOLS_ROOT}/src/MVSUtils:\${PATH}
 zz
 
 echo "Create dev profile for ${ZOS_USER}"
