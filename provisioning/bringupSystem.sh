@@ -34,6 +34,7 @@ export GIT_TEMPLATE_DIR=\${TOOLS_ROOT}/share/git-core/templates
 export JAVA_HOME=${ZOS_JAVA_HOME}
 mkdir -p /zaas1/tmp
 export TMPDIR=/zaas1/tmp
+export SMP_CSI=MVS.GLOBAL.CSI
 git config --global http.sslVerify false 
 git config --global core.editor "/bin/vi -W filecodeset=ISO8859-1" 
 git config --global user.name  "${ZOS_GIT_USER}"
@@ -123,4 +124,11 @@ ${SCP} "${DEVPROFILE}" "${ZOS_USER}@${ZOS_HOST}:./.devprofile"
 if [[ $? -gt 0 ]]; then
 	echo "...failed"
 	exit 16
+fi
+
+echo "Let TSTRADM receive/apply PTFs"
+${SSH} "${ZOS_USER}@${ZOS_HOST}" "racfpermit facility 'gim.*'"
+if [[ $? -gt 0 ]]; then
+        echo "...failed"
+        exit 16
 fi

@@ -1,0 +1,15 @@
+/* Record Layout */
+/* ------------- */
+/* Begin  End    */
+/* Column Column Length Description                                 */
+/* ------ ------ ------ ------------------------------------------- */
+/*   1      8      8    EBCDIC Numeric      - Unique Account Number */ 
+/*   9     13      5    Packed Decimal      - Account Limit         */ 
+/*  14     18      5    Packed Decimal      - Account Balance       */ 
+/*  19     38     20    EBCDIC Alphabetic   - Last Name             */ 
+/*  39     53     15    EBCDIC Alphabetic   - First Name            */ 
+/*  54     78     25    EBCDIC Alphabetic   - Street Address        */ 
+/*  79     98     20    EBCDIC Alphabetic   - City                  */ 
+/*  99    120     22    EBCDIC Alphabetic   - State                 */ 
+/* 121    170     50    EBCDIC Alphabetic   - Comment               */ 
+
