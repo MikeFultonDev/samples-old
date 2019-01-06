@@ -4,9 +4,10 @@
 #
 . ./setenv.sh
 hlq=`hlq`
-in=${hlq}.CLIENT.BIN
-out=${hlq}.SCLIENT.BIN
+in=${hlq}.CLIENT.ORIG.BIN
+out=${hlq}.CLIENT.SORT.BIN
 
+drm -f ${out}
 dtouch -rfb -l170 -tseq ${out}
 mvscmd --pgm=SORT --args='LIST' --sysout=* --sortin=${in} --sortout=${out} --sysin=stdin <<zz
  SORT FIELDS=(1,8,CH,A)
