@@ -1,8 +1,8 @@
 #!/bin/sh
 . ./setenv.sh
 hlq=`hlq`
-in=${hlq}.CLIENT.TXT
-out=${hlq}.CLIENT.BIN
+in=${hlq}.CLIENT.ORIG.TXT
+out=${hlq}.CLIENT.ORIG.BIN
 drm -f ${in}
 drm -f ${out}
 dtouch -tseq -rfb -l188 ${in}
