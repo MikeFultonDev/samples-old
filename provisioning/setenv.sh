@@ -1,4 +1,7 @@
 #!/bin/sh
+#ZOS_ADMIN:     The z/OS ID that has highest privileges 
+#               This ID is not needed for basic provisioning but needs to have it's password reset
+#               For z/OS as a Service systems, this is IBMUSER
 #ZOS_USER:      The z/OS ID that you will log in as. 
 #               This ID will need privileges to APF authorize modules, change RACF definitions and install software. 
 #               For z/OS as a Service systems, this is TSTRADM
@@ -19,6 +22,7 @@
 #SFTP            Command to use for sftp (typically just sftp, but sometimes sftp -p <port>)
 #
 export ZOS_USER="tstradm"
+export ZOS_ADMIN="ibmuser"
 export ZOS_HOST="fultonm.zosaas.ibm.com"
 export ZOS_GIT_USER="Mike Fulton"
 export ZOS_GIT_EMAIL="fultonm@ca.ibm.com"

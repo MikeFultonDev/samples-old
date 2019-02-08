@@ -3,6 +3,8 @@
 if [[ -z "${ZOS_USER}" ]]; then
 	. ./setenv.sh
 fi
+./setpasswd.sh "${ZOS_USER}"
+./setpasswd.sh "${ZOS_ADMIN}"
 ./crtauth.sh
 ./checkenv.sh
 . ./crtWorkDir.sh
@@ -32,9 +34,12 @@ export GIT_SHELL=\${TOOLS_ROOT}/bin/bash
 export GIT_EXEC_PATH=\${TOOLS_ROOT}/libexec/git-core
 export GIT_TEMPLATE_DIR=\${TOOLS_ROOT}/share/git-core/templates
 export JAVA_HOME=${ZOS_JAVA_HOME}
+export PS1="\$(whoami)@\$(hostname -s):\$(pwd)\$ >"
 mkdir -p /zaas1/tmp
 export TMPDIR=/zaas1/tmp
 export SMP_CSI=MVS.GLOBAL.CSI
+export _BPX_SHAREAS=YES
+export _BPX_SPAWN_SCRIPT=YES
 git config --global http.sslVerify false 
 git config --global core.editor "/bin/vi -W filecodeset=ISO8859-1" 
 git config --global user.name  "${ZOS_GIT_USER}"
@@ -108,7 +113,7 @@ if [[ $? -gt 0 ]]; then
 	echo "...failed"
 	exit 16
 fi
-${SSH} "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; cd ${ZOS_TOOLS_ROOT}/src; git clone https://github.com/mikefultonbluemix/MVSUtils.git"
+${SSH} "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; cd ${ZOS_TOOLS_ROOT}/src; git clone https://github.com/mikefultonbluemix/MVSUtils.git; cd MVSUtils; ./build.sh"
 if [[ $? -gt 0 ]]; then
 	echo "...failed"
 	exit 16
@@ -127,7 +132,7 @@ if [[ $? -gt 0 ]]; then
 fi
 
 echo "Let TSTRADM receive/apply PTFs"
-${SSH} "${ZOS_USER}@${ZOS_HOST}" "racfpermit facility 'gim.*'"
+${SSH} "${ZOS_USER}@${ZOS_HOST}" ". ~/.profile; racfpermit facility 'gim.*'"
 if [[ $? -gt 0 ]]; then
         echo "...failed"
         exit 16
