@@ -1,7 +1,7 @@
 #!/bin/sh
 # See: http://www-03.ibm.com/support/techdocs/atsmastr.nsf/5cb5ed706d254a8186256c71006d2e0a/bdee3c698260c970852582170066c99f/$FILE/New%20Certificate%20Authority.pdf) 
 #
-#set -x
+set -x
 function tsoPrintError {
 	cmd="$@"
 	tsocmd "$cmd" >/dev/null 2>&1

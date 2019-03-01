@@ -4,7 +4,6 @@
 # Requires SMP/E certificate setup has already been done
 #
 export SMPE_CLASSPATH="/usr/lpp/smp/classes"
-export SMPE_CSI_DATASET="MVS.GLOBAL.CSI"
 export SMPE_LABEL="SMPE Client Certificate"
 export SMPE_RING="SMPERING"
 export SMPE_SERVER="eccgw01.boulder.ibm.com"
@@ -64,7 +63,7 @@ touch ${PRINT}
 rm -rf ${NTS}
 mkdir ${NTS}
 
-mvscmdauth --pgm=gimsmp --smpcsi=${SMPE_CSI_DATASET} --smpwkdir=${TMP} --smpnts=${NTS} --smplog=${LOG},mod --smpout=${OUT},mod --smprpt=${RPT},mod --bpxprint=* --sysprint=* --server=${tmpOrderHFS} --client=${tmpClientHFS} --smpcntl=${tmpCntlHFS} >${PRINT}
+mvscmdauth --pgm=gimsmp --smpcsi=${SMP_CSI} --smpwkdir=${TMP} --smpnts=${NTS} --smplog=${LOG},mod --smpout=${OUT},mod --smprpt=${RPT},mod --bpxprint=* --sysprint=* --server=${tmpOrderHFS} --client=${tmpClientHFS} --smpcntl=${tmpCntlHFS} >${PRINT}
 rc=$?
 if [ ${rc} -ne 0 ]; then
 	cat ${OUT}
