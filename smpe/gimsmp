@@ -1,0 +1,46 @@
+#!/bin/sh
+# Equivalent of the SMPPROC to make it easy to run SMP/E commands
+# from 'sh'
+# Syntax: gimsmp with input from stdin
+# output to ${TMP}/*.smp*
+# SYSPRINT DD sent to stdout
+#
+if [[ "${TMP}" == "" ]]; then
+	if [[ "${TMPDIR}" == "" ]]; then
+		tmp="/tmp"
+		env="Neither TMP nor TMPDIR"
+	else
+            	tmp="${TMPDIR}"
+		env="TMPDIR"
+	fi
+else
+    	tmp="${TMP}"
+	env="TMP"
+fi
+
+if [ -d ${tmp} ]; then
+	;
+else
+    	echo "${env} is set but directory ${tmp} does not exist. gimsmp failed."
+	exit 16
+fi
+#set -x
+B="smp"
+SMPLOG=${tmp}/${B}.smplog
+SMPRPT=${tmp}/${B}.smprpt
+SMPLOGA=${tmp}/${B}.smploga
+SMPOUT=${tmp}/${B}.smpout
+SMPIN=${tmp}/${B}.smpin
+SMPLIST=${tmp}/${B}.smplist
+SMPSNAP=${tmp}/${B}.smpsnap
+SMPDEBUG=${tmp}/${B}.smpdebug
+SMPPUNCH=${tmp}/${B}.smppunch
+SYSPRINT=stdout
+rm -f ${SMPLOG} ${SMPRPT} ${SMPOUT} ${SMPIN} ${SMPLIST}
+touch ${SMPLOG} ${SMPRPT} ${SMPOUT} ${SMPLIST}
+
+while read line
+do
+  	echo ${line} >>${SMPIN}
+done
+mvscmdauth --pgm=gimsmp --smpcsi=${SMP_CSI} --smpwkdir=${tmp} --smplog=${SMPLOG} --smpout=${SMPOUT} --smprpt=${SMPRPT} --bpxprint=DUMMY --sysprint=${SYSPRINT} --smpcntl=${SMPIN} --smplist=${SMPLIST}
