@@ -9,6 +9,7 @@ export ZOS_GIT_EMAIL="fultonm@ca.ibm.com"
 export ROCKET_TOOLS_DIR="/Users/fultonm/Documents/Development/RocketTools"
 export CERT_DIR="/Users/fultonm/Documents/Development/zOSCertificates"
 export ZOS_TOOLS_ROOT="/zaas1/tools"
+export ZOS_TMPDIR="/zaas1/tmp"
 export ZOS_JAVA_HOME=/usr/lpp/java/J8.0_64
 export SSH="ssh -p 2022"
 export SFTP="sftp -P 2022"

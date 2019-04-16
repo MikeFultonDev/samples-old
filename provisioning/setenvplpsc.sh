@@ -4,6 +4,7 @@ export ZOS_GIT_USER="Mike Fulton"
 export ZOS_GIT_EMAIL="fultonm@ca.ibm.com"
 export ROCKET_TOOLS_DIR="/Users/fultonm/Documents/Development/RocketTools"
 export ZOS_TOOLS_ROOT="/u/mfulton/tools"
+export ZOS_TMPDIR="/tmp"
 export SSH=ssh
 export SFTP=sftp
 export SCP=scp
