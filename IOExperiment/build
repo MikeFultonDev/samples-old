@@ -1,0 +1,2 @@
+#!/bin/sh
+c89 -odscp -Wc,langlvl\(extended\) -Wc,list\(./\) -Wa,list dcp.c malloc24.c dcpsvc.s >dcpsvc.lst
