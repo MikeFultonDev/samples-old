@@ -32,17 +32,29 @@ typedef _Packed struct {
 typedef _Packed struct {
 	unsigned int eod:1;
 	unsigned int reserved:31;
-} READFlags_T;
+} GETFlags_T;
 
 typedef _Packed struct {
 	char* buffer;
 	void* dcb;
 	void* iortn;
-	READFlags_T* eodp;
-} READPList_T;	
+	GETFlags_T* eodp;
+} GETPList_T;	
+
+typedef _Packed struct {
+	unsigned int reserved:32;
+} PUTFlags_T;
+
+typedef _Packed struct {
+	char* buffer;
+	void* dcb;
+	void* iortn;
+	PUTFlags_T* flags;
+} PUTPList_T;	
 
 int SVC19(SVC19PList_T r0);
 int SVC20(SVC20PList_T r0);
-void READ(READPList_T plist);
+void GET(GETPList_T plist);
+void PUT(PUTPList_T plist);
 
 #endif

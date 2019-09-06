@@ -64,8 +64,7 @@ static int allocDDName(OptInfo_T* optInfo, char* ddName, char* dsName, __dyn_t* 
 	errno = 0;
 	rc = dynalloc(ip);
         if (rc) {
-		perror("dynalloc");
-	        fprintf(stderr, "dynalloc failed with rc: 0x%x\n", rc);
+	        fprintf(stderr, "Unable to allocate DDName %s for dataset %s. dynalloc failed with rc: 0x%x\n", ddName, dsName, rc);
         }
 	return rc;
 }
@@ -100,16 +99,23 @@ int main(int argc, char* argv[]) {
 	DCBE_T inDCBE;
 	DCB_T* outDCB;
 	DCBE_T outDCBE;
-	READPList_T readparms;	
+	GETPList_T getparms;	
+	PUTPList_T putparms;	
 	DCBActive_T* inDCBActive;
+	DCBActive_T* outDCBActive;
 	void* readFP;
+	char* getp;
+	char* putp;
 	int rc;
 	unsigned int bytesRead; 
-	READFlags_T eod = {0};
+	PUTFlags_T flags = {0};
+	GETFlags_T eod   = {0};
 
 	OptInfo_T optInfo = {0};
 	OpenType_T ddInOpenType = { 1, Disp, OpenInput, 0 };
+	OpenType_T ddOutOpenType = { 1, Disp, OpenOutput, 0 };
 	CloseType_T ddInCloseType = { 1, Disp, 0 };
+	CloseType_T ddOutCloseType = { 1, Disp, 0 };
 
 	if (argc < 3) {
 		fprintf(stderr, "syntax: dcp <in> <out>\n");
@@ -130,44 +136,70 @@ int main(int argc, char* argv[]) {
 	}
 	
 	rc = allocDDName(&optInfo, ddIn, in, &inDDInfo, 0, 0);
-
 	if (rc) {
 		return rc;
 	}
+
+	rc = allocDDName(&optInfo, ddOut, out, &outDDInfo, 0, 0);
+	if (rc) {
+		return rc;
+	}
+
 
 	dcbinit(&inDDInfo, inDCB, &inDCBE, MACFMT_READ);
 	rc = openDCB(ddInOpenType, &inDDInfo, inDCB);
 	if (rc) {
-		fprintf(stderr, "openDCB failed with rc:0x%x\n", rc);
+		fprintf(stderr, "openDCB (input) failed with rc:0x%x\n", rc);
+		return rc;
+	}
+	dcbinit(&outDDInfo, outDCB, &outDCBE, MACFMT_WRITE);
+	rc = openDCB(ddOutOpenType, &outDDInfo, outDCB);
+	if (rc) {
+		fprintf(stderr, "openDCB (output) failed with rc:0x%x\n", rc);
 		return rc;
 	}
 
 	inDCBActive = (DCBActive_T*) inDCB;
-	readparms.buffer = readBuffer;
-	readparms.dcb = inDCBActive;
-	readparms.iortn = (void*) inDCBActive->iortn;
-	readparms.eodp = &eod;
+	outDCBActive = (DCBActive_T*) outDCB;
+	getparms.buffer = readBuffer;
+	getparms.dcb = inDCBActive;
+	getparms.iortn = (void*) inDCBActive->iortn;
+	getparms.eodp = &eod;
+	putparms.buffer = readBuffer;
+	putparms.dcb = outDCBActive;
+	putparms.iortn = (void*) outDCBActive->iortn;
+	putparms.flags = &flags;
 	while (1) {
-		READ(readparms);
-		if (readparms.eodp->eod) {
+		GET(getparms);
+		if (getparms.eodp->eod) {
 			break;
 		}
 		bytesRead = inDCB->lrecl;
 		if (bytesRead > 0) {
-			printf("read: %d %.*s\n", bytesRead, bytesRead, readparms.buffer);
+			printf("GET: %d %.*s\n", bytesRead, bytesRead, getparms.buffer);
 		}
+		PUT(putparms);  
 	}
 
 	rc = closeDCB(ddInCloseType, inDCB);
 	if (rc) {
-		fprintf(stderr, "closeDB failed with rc:0x%x\n", rc);
+		fprintf(stderr, "closeDB (input) failed with rc:0x%x\n", rc);
+		return rc;
+	}
+	rc = closeDCB(ddOutCloseType, outDCB);
+	if (rc) {
+		fprintf(stderr, "closeDB (output) failed with rc:0x%x\n", rc);
 		return rc;
 	}
 
 	rc = freeDDName(&optInfo, ddIn, in, &freeDDInfo);
-
 	if (rc) {
-		fprintf(stderr, "freeDDName failed with rc:0x%x\n", rc);
+		fprintf(stderr, "freeDDName (input) failed with rc:0x%x\n", rc);
+		return rc;
+	}
+	rc = freeDDName(&optInfo, ddOut, out, &freeDDInfo);
+	if (rc) {
+		fprintf(stderr, "freeDDName (output) failed with rc:0x%x\n", rc);
 		return rc;
 	}
 

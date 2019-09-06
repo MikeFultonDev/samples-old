@@ -28,9 +28,9 @@ SVC20 RMODE ANY
       SVC 20
       BCR B'1111',14
 *
-READ  CSECT
-READ  AMODE 31
-READ  RMODE ANY
+GET   CSECT
+GET   AMODE 31
+GET   RMODE ANY
 *
 * Input:
 * R1 points to 4 fullwords
@@ -41,14 +41,34 @@ READ  RMODE ANY
 * If EOD triggered, control will transfer to 
 * instruction after BASR 14,15
 *
-READP EDCPRLG USRDSAL=0,BASEREG=12
+GETP  EDCPRLG USRDSAL=0,BASEREG=12
       L  0,0(,1)
       L  15,8(,1)
       L  2,12(,1)
       L  1,4(,1)
       BASR 14,15
 *
-READE EDCEPIL
+GETE  EDCEPIL
+*
+PUT   CSECT
+PUT   AMODE 31
+PUT   RMODE ANY
+*
+* Input:
+* R1 points to 4 fullwords
+* 0 : buffer to write record to
+* 4 : DCB for dataset 
+* 8 : GET routine to call
+* C : flag for future use
+*
+PUTP  EDCPRLG USRDSAL=0,BASEREG=12
+      L  0,0(,1)
+      L  15,8(,1)
+      L  2,12(,1)
+      L  1,4(,1)
+      BASR 14,15
+*
+PUTE  EDCEPIL
 *
 EOD   CSECT
 EOD   AMODE 31
