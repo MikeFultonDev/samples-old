@@ -6,6 +6,7 @@
 #include "malloc24.h"
 #include "dcb.h"
 #include "dcpsvc.h"
+#include <signal.h>
 
 typedef struct {
 	int verbose:1;
@@ -45,7 +46,7 @@ static int closeDCB(CloseType_T type, DCB_T* dcb) {
 	return SVC20(R0); 
 }
 
-static int allocDDName(OptInfo_T* optInfo, char* ddName, char* dsName, __dyn_t* ip, int isExclusive, int isModify) {
+static int allocDDName(OptInfo_T* optInfo, const char* type, char* ddName, char* dsName, __dyn_t* ip, int isExclusive, int isModify) {
         int rc;         
                 
 	dyninit(ip);
@@ -64,7 +65,7 @@ static int allocDDName(OptInfo_T* optInfo, char* ddName, char* dsName, __dyn_t* 
 	errno = 0;
 	rc = dynalloc(ip);
         if (rc) {
-	        fprintf(stderr, "Unable to allocate DDName %s for dataset %s. dynalloc failed with rc: 0x%x\n", ddName, dsName, rc);
+	        fprintf(stderr, "Unable to open %s dataset %s\n", type, dsName);
         }
 	return rc;
 }
@@ -80,10 +81,17 @@ static int freeDDName(OptInfo_T* optInfo, char* ddName, char* dsName, __dyn_t* i
 	errno = 0;
 	rc = dynfree(ip);
 	if (rc) {
-		perror("dynfree");
-		fprintf(stderr, "dynfree failed with rc: 0x%x\n", rc);
+		fprintf(stderr, "Unable to close dataset %s\n", dsName);
 	}
 	return rc;
+}
+
+static char* curstate = NULL;
+static char* curds = NULL;
+
+void openfailure(int val) {
+	fprintf(stderr, "Unable to open %s dataset %s\n", curstate, curds);
+	exit(0);
 }
 
 int main(int argc, char* argv[]) {
@@ -135,21 +143,30 @@ int main(int argc, char* argv[]) {
 		return 16;
 	}
 	
-	rc = allocDDName(&optInfo, ddIn, in, &inDDInfo, 0, 0);
+
+
+
+	curstate = "source";
+	curds = in;
+	rc = allocDDName(&optInfo, curstate, ddIn, in, &inDDInfo, 0, 0);
 	if (rc) {
 		return rc;
 	}
-
-	rc = allocDDName(&optInfo, ddOut, out, &outDDInfo, 0, 0);
-	if (rc) {
-		return rc;
-	}
-
-
 	dcbinit(&inDDInfo, inDCB, &inDCBE, MACFMT_READ);
+	if (signal(SIGABND, openfailure) == SIG_ERR) {
+		perror("could not establish signal handler");
+		abort();
+	}
 	rc = openDCB(ddInOpenType, &inDDInfo, inDCB);
 	if (rc) {
 		fprintf(stderr, "openDCB (input) failed with rc:0x%x\n", rc);
+		return rc;
+	}
+
+	curstate = "target";
+	curds = out;
+	rc = allocDDName(&optInfo, curstate, ddOut, out, &outDDInfo, 0, 0);
+	if (rc) {
 		return rc;
 	}
 	dcbinit(&outDDInfo, outDCB, &outDCBE, MACFMT_WRITE);
@@ -161,6 +178,10 @@ int main(int argc, char* argv[]) {
 
 	inDCBActive = (DCBActive_T*) inDCB;
 	outDCBActive = (DCBActive_T*) outDCB;
+
+	printf("input recfm: 0x%x\n", inDCBActive->recfm);
+	printf("output recfm: 0x%x\n", outDCBActive->recfm);
+
 	getparms.buffer = readBuffer;
 	getparms.dcb = inDCBActive;
 	getparms.iortn = (void*) inDCBActive->iortn;

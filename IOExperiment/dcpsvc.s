@@ -2,6 +2,7 @@ SVC19 CSECT
 SVC19 AMODE 31
 SVC19 RMODE ANY
 *
+* SVC19: OPEN
 * Input: 
 * R1 points to DCB
 * For SVC19:
@@ -17,6 +18,7 @@ SVC20 CSECT
 SVC20 AMODE 31
 SVC20 RMODE ANY
 *
+* SVC20: CLOSE
 * Input: 
 * R1 points to DCB
 * For SVC20:
@@ -74,7 +76,7 @@ EOD   CSECT
 EOD   AMODE 31
 EOD   RMODE ANY
 * Input:
-* R2 unchanged from before call to PUT (in READ)
+* R2 unchanged from before call to GET (in READ)
 * Store 1 into HOb to indicate EOD
 * R15 contains address of location after BASR in READ
 *

@@ -1,2 +1,2 @@
 #!/bin/sh
-c89 -odscp '-Wc,langlvl(extended),suppress(CCN3764)' '-Wc,list(./)' -Wa,list dcp.c malloc24.c dcpsvc.s >dcpsvc.lst
+c89 -odscp '-Wc,opt(3),langlvl(extended),suppress(CCN3764)' '-Wc,list(./)' -Wa,list dcp.c malloc24.c dcpsvc.s >dcpsvc.lst

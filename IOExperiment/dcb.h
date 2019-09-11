@@ -85,10 +85,12 @@ typedef _Packed struct {
 } DCB_T;
 
 typedef _Packed struct {
-	char unk[0x30];
+	char unk1[0x24];
+	char recfm;
+	char unk2[0xB];
 	char hobunk;
 	unsigned int iortn:24;
-	char unk2[0x10];
+	char unk3[0x10];
 	unsigned long* dcbioba;
 } DCBActive_T;
 
