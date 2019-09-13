@@ -50,6 +50,9 @@ typedef _Packed struct {
 		unsigned short mult;  /* 0x0000 */
 } DCBE_T;
 
+#define DCB_VB (0x50)
+#define DCB_FB (0x90)
+
 typedef _Packed struct {
 /* 0x00 */	DCBE_T* dcbe;         /* 0x........ */
 		char fdaddevtbl[0x0C];/* 0x000000000000000000000000 */
@@ -88,10 +91,13 @@ typedef _Packed struct {
 	char unk1[0x24];
 	char recfm;
 	char unk2[0xB];
-	char hobunk;
+/*0x30*/char hobunk;
 	unsigned int iortn:24;
 	char unk3[0x10];
-	unsigned long* dcbioba;
+/*0x44*/unsigned long* dcbioba;
+	char unk4[0x8];
+/*0x50*/char unk5[0x2];
+	unsigned short lrecl;
 } DCBActive_T;
 
 #define ADDR_32_ODD (0x00000001)

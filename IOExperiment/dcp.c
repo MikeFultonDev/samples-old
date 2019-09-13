@@ -90,12 +90,13 @@ static char* curstate = NULL;
 static char* curds = NULL;
 
 void openfailure(int val) {
-	fprintf(stderr, "Unable to open %s dataset %s\n", curstate, curds);
+	fprintf(stderr, "(ABEND 0x%x) Unable to open %s dataset %s\n", val, curstate, curds);
 	exit(0);
 }
 
 int main(int argc, char* argv[]) {
-	char readBuffer[65536];
+	char getBuffer[65536];
+	char putBuffer[65536];
 	char* in;
 	char* out;
 	char ddIn[] = {"DDIN    "};
@@ -115,7 +116,7 @@ int main(int argc, char* argv[]) {
 	char* getp;
 	char* putp;
 	int rc;
-	unsigned int bytesRead; 
+	int shareBuffer;
 	PUTFlags_T flags = {0};
 	GETFlags_T eod   = {0};
 
@@ -131,6 +132,30 @@ int main(int argc, char* argv[]) {
 	}
 	in = argv[1];
 	out = argv[2];
+	if (strchr(in, '(')) {
+		fprintf(stderr, "No support for copy of PDS(E) member as source\n");
+		return 4;
+	}
+	if (strchr(out, '(')) {
+		fprintf(stderr, "No support for copy of PDS(E) member as target\n");
+		return 4;
+	}
+	if (strchr(in, '/')) {
+		fprintf(stderr, "No support for copy of HFS file as source\n");
+		return 4;
+	}
+	if (strchr(out, '/')) {
+		fprintf(stderr, "No support for copy of HFS file as target\n");
+		return 4;
+	}
+	if (strlen(in) > 44) {
+		fprintf(stderr, "Dataset maximum length is 44. Source name is too long\n");
+		return 8;
+	}
+	if (strlen(out) > 44) {
+		fprintf(stderr, "Dataset maximum length is 44. Target name is too long\n");
+		return 8;
+	}
 
 	/*
 	 * DCB must be 24-bit, but DCBE can be 31-bit, so DCB is 24-bit heap-allocated
@@ -139,12 +164,9 @@ int main(int argc, char* argv[]) {
 	inDCB = malloc24(sizeof(DCB_T));
 	outDCB = malloc24(sizeof(DCB_T));
 	if (!inDCB || !outDCB) {
-		fprintf(stderr, "unable to allocate storage below the line for I/O\n");
+		fprintf(stderr, "Internal Error: unable to allocate storage below the line for I/O\n");
 		return 16;
 	}
-	
-
-
 
 	curstate = "source";
 	curds = in;
@@ -153,13 +175,15 @@ int main(int argc, char* argv[]) {
 		return rc;
 	}
 	dcbinit(&inDDInfo, inDCB, &inDCBE, MACFMT_READ);
+#if 0
 	if (signal(SIGABND, openfailure) == SIG_ERR) {
-		perror("could not establish signal handler");
+		perror("Internal Error: could not establish signal handler");
 		abort();
 	}
+#endif
 	rc = openDCB(ddInOpenType, &inDDInfo, inDCB);
 	if (rc) {
-		fprintf(stderr, "openDCB (input) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to open source dataset %s\n", in);
 		return rc;
 	}
 
@@ -172,21 +196,29 @@ int main(int argc, char* argv[]) {
 	dcbinit(&outDDInfo, outDCB, &outDCBE, MACFMT_WRITE);
 	rc = openDCB(ddOutOpenType, &outDDInfo, outDCB);
 	if (rc) {
-		fprintf(stderr, "openDCB (output) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to open target dataset %s\n", in);
 		return rc;
 	}
 
 	inDCBActive = (DCBActive_T*) inDCB;
 	outDCBActive = (DCBActive_T*) outDCB;
 
-	printf("input recfm: 0x%x\n", inDCBActive->recfm);
-	printf("output recfm: 0x%x\n", outDCBActive->recfm);
+	printf("input recfm: 0x%x lrecl: %d\n", inDCBActive->recfm, inDCBActive->lrecl);
+	printf("output recfm: 0x%x lrecl: %d\n", outDCBActive->recfm, outDCBActive->lrecl);
 
-	getparms.buffer = readBuffer;
+	getparms.buffer = getBuffer;
 	getparms.dcb = inDCBActive;
 	getparms.iortn = (void*) inDCBActive->iortn;
 	getparms.eodp = &eod;
-	putparms.buffer = readBuffer;
+
+	if (inDCBActive->recfm == outDCBActive->recfm && inDCBActive->lrecl == outDCBActive->lrecl) {
+		putparms.buffer = getBuffer;
+		shareBuffer = 1;
+	} else {
+		putparms.buffer = putBuffer;
+		shareBuffer = 0;
+	}
+		
 	putparms.dcb = outDCBActive;
 	putparms.iortn = (void*) outDCBActive->iortn;
 	putparms.flags = &flags;
@@ -195,32 +227,71 @@ int main(int argc, char* argv[]) {
 		if (getparms.eodp->eod) {
 			break;
 		}
-		bytesRead = inDCB->lrecl;
-		if (bytesRead > 0) {
-			printf("GET: %d %.*s\n", bytesRead, bytesRead, getparms.buffer);
+				
+		if (!shareBuffer) {
+			unsigned int bytesToWrite = outDCBActive->lrecl;
+			unsigned int bytesRead; 
+			char* inp;
+			char* outp; 
+			if ((inDCBActive->recfm & DCB_VB) == DCB_VB) {	
+				bytesRead = *((unsigned short*) getBuffer);
+printf("input is vb\n");
+printf("record length: 0x%x\n", bytesRead);
+				inp = &getBuffer[4];
+				bytesRead -= 4;
+			} else {
+				inp = getBuffer;
+				bytesRead = inDCBActive->lrecl;
+			} 
+			if ((outDCBActive->recfm & DCB_VB) == DCB_VB) {
+printf("output is vb\n");
+				if (bytesRead < bytesToWrite-4) {
+					bytesToWrite = bytesRead+4;
+				}
+				outp = &putBuffer[4];
+				*((unsigned int*) (putBuffer)) = 0;
+				*((unsigned short*) (putBuffer)) = bytesToWrite;
+				outDCBActive->lrecl = bytesToWrite;
+				bytesToWrite -= 4;
+			} else {
+				outp = putBuffer;
+				bytesToWrite = outDCBActive->lrecl;
+			}
+printf("bytes read:%d bytes-to-write:%d\n", bytesRead, bytesToWrite);
+			if (bytesRead > bytesToWrite) {
+printf("A) copy %d bytes\n", bytesToWrite);
+				memcpy(outp, inp, bytesToWrite);
+			} else if (bytesRead < bytesToWrite) {
+printf("B) copy %d bytes\n", bytesRead);
+				memcpy(outp, inp, bytesRead);
+				memset(&outp[bytesRead], ' ', bytesToWrite-bytesRead);
+			} else {
+printf("C) copy %d bytes\n", bytesRead);
+				memcpy(outp, inp, bytesRead);
+			}
 		}
 		PUT(putparms);  
 	}
 
 	rc = closeDCB(ddInCloseType, inDCB);
 	if (rc) {
-		fprintf(stderr, "closeDB (input) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to close source dataset %s after copy\n", in);
 		return rc;
 	}
 	rc = closeDCB(ddOutCloseType, outDCB);
 	if (rc) {
-		fprintf(stderr, "closeDB (output) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to close target dataset %s after copy\n", out);
 		return rc;
 	}
 
 	rc = freeDDName(&optInfo, ddIn, in, &freeDDInfo);
 	if (rc) {
-		fprintf(stderr, "freeDDName (input) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to free source dataset %s after copy\n", in);
 		return rc;
 	}
 	rc = freeDDName(&optInfo, ddOut, out, &freeDDInfo);
 	if (rc) {
-		fprintf(stderr, "freeDDName (output) failed with rc:0x%x\n", rc);
+		fprintf(stderr, "Unable to free target dataset %s after copy\n", out);
 		return rc;
 	}
 
