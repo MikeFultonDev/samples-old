@@ -1,0 +1,59 @@
+#!/bin/sh
+hlq=`hlq`
+pfx=${hlq}.DSCP
+vb40=${pfx}.vb40
+vb80=${pfx}.vb80
+fb20=${pfx}.fb20
+fb60=${pfx}.fb60
+
+tgtvb40=${pfx}.tgtvb40
+tgtvb80=${pfx}.tgtvb80
+tgtfb20=${pfx}.tgtfb20
+tgtfb60=${pfx}.tgtfb60
+
+drm -f "${pfx}.*"
+dtouch -tseq -rvb -l40 ${vb40}
+dtouch -tseq -rvb -l80 ${vb80}
+dtouch -tseq -rfb -l20 ${fb20}
+dtouch -tseq -rfb -l60 ${fb60}
+
+dtouch -tseq -rvb -l40 ${tgtvb40}
+dtouch -tseq -rvb -l80 ${tgtvb80}
+dtouch -tseq -rfb -l20 ${tgtfb20}
+dtouch -tseq -rfb -l60 ${tgtfb60}
+
+vb40line=`printf "%36s" | tr " " "4"`
+vb80line=`printf "%76s" | tr " " "8"`
+fb20line=`printf "%20s" | tr " " "2"`
+fb60line=`printf "%60s" | tr " " "6"`
+
+decho "${vb40line}
+${vb40line}" ${vb40}
+
+decho "${vb80line}
+${vb80line}" ${vb80}
+
+decho "${fb20line}
+${fb20line}" ${fb20}
+
+decho "${fb60line}
+${fb60line}" ${fb60}
+
+set -x
+
+dscp ${vb40} ${tgtfb60}
+rc1=$?
+
+dscp ${vb80} ${tgtvb40}
+rc2=$?
+
+dscp ${fb20} ${tgtfb20}
+rc3=$?
+
+dscp ${fb60} ${tgtvb80}
+rc4=$?
+
+if [ "$rc1,$rc2,$rc3,$rc4" != "0,0,0,0" ]; then
+     echo "non-zero return code copying datasets"
+     exit 16
+fi

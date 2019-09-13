@@ -1,14 +1,14 @@
 #ifndef __DCB_H__
 	#define __DCB_H__
 /*
- * References: 
+ * References:
  * Underlying Open/Read/Write/Close assembler macros and corresponding data structures (control blocks)
  * http://tech.mikefulton.ca/QSAMOPEN
  * http://tech.mikefulton.ca/QSAMGET
  * http://tech.mikefulton.ca/QSAMPUT
  * http://tech.mikefulton.ca/QSAMCLOSE
  * http://tech.mikefulton.ca/QSAMDataControlBlock
- * http://tech.mikefulton.ca/QSAMDataControlBlockExtension 
+ * http://tech.mikefulton.ca/QSAMDataControlBlockExtension
  */
 
 #include <dynit.h>
@@ -16,9 +16,9 @@
 #pragma enum(small)
 typedef enum {
 	Disp=0,
-	Reread=1, 
+	Reread=1,
 	Leave=3
-} Action_T; 
+} Action_T;
 
 typedef enum {
 	OpenInput=0,
@@ -79,7 +79,7 @@ typedef _Packed struct {
 		unsigned int internaluse;/* 0x00000001 */
 		unsigned int eobadrtn;/* 0x00000001 */
 		unsigned int recadrtn;/* 0x00000001 */
-/* 0x50 */ 	unsigned short qswsflags;/* 0x0000 */	
+/* 0x50 */ 	unsigned short qswsflags;/* 0x0000 */
 		unsigned short lrecl; /* 0x0000 */
 		char eropt;           /* 0x00 */
 		unsigned int cntrlrtn:24;/* 0x000001 */
@@ -111,5 +111,8 @@ typedef _Packed struct {
 #define BLANKS "        "
 
 #define DCBE_EYE "DCBE"
+
+#define RDW_PREFIX_SIZE (4)
+#define MAX_RECORD_LEN (65536)
 
 #endif
