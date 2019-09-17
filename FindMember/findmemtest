@@ -1,0 +1,24 @@
+#!/bin/sh
+hlq=`hlq`
+pfx=${hlq}.FINDMEM
+dspgm=${pfx}.LOAD
+
+drm -f "${pfx}.*"
+
+c89 -Wc,langlvl\(extended\) -o"//'${dspgm}(FINDMEM)'" -O3 findmem.c
+
+ds1=${pfx}.DATASET.A
+ds2=${pfx}.DATASET.B
+
+dtouch ${ds1}
+dtouch ${ds2}
+
+decho "This is member one of dataset ${ds1}" "${ds1}(ONE)"
+decho "This is member two of dataset ${ds1}" "${ds1}(TWO)"
+decho "This is member A#ONE of dataset ${ds2}" "${ds2}(A#ONE)"
+decho "This is member B#TWO of dataset ${ds2}" "${ds2}(B#TWO)"
+
+mvscmd --pgm=findmem --steplib=${dspgm} --args="NOTTHERE" --pdsconc=${ds1}:${ds2}
+
+mvscmd --pgm=findmem --steplib=${dspgm} --args="ONE" --pdsconc=${ds1}:${ds2} --sysprint=*
+mvscmd --pgm=findmem --steplib=${dspgm} --args="A#ONE" --pdsconc=${ds1}:${ds2} --sysprint=*
