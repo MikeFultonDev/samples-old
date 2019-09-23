@@ -1,0 +1,11 @@
+#!/bin/sh
+#set -x
+rmvsutilchk
+
+if [ $? -gt 0 ]; then
+  exit $?
+fi
+
+. rmvsfn
+
+rmvsSSH "dls ${*}"

@@ -1,0 +1,65 @@
+#!/bin/sh
+#rmvsutilchk: check that the target system environment variables are set
+#
+#Required:
+#          RMVSHOST........ host to connect to
+#          RMVSUSER........ user to connect to
+#          RMVSSSH......... ssh command to use
+#          RMVSSCP......... scp command to use
+#          RMVSSSHOPTS..... ssh options to use
+#          RMVSSCPOPTS..... scp options to use
+#          RMVSDIR......... directory PATH on z/OS for mvscmd and mvsutils
+#
+#SSH agent is required to be running to ensure userid/password does not need to be entered
+
+syntax() {
+  echo "rmvsutilchk: Check that the environment is correctly defined to run mvsutil utilities" >&2
+        echo "Syntax: rmvsutilchk [-?]" >&2
+        echo " -? : print out syntax" >&2
+}
+
+validcmd() {
+  type ${1} >/dev/null 2>&1
+  return $?
+}
+
+#set -x
+set -o noglob
+while getopts ":" opt; do
+  case ${opt} in
+    \?)
+      if [ "${OPTARG}" != "?" ]; then
+        echo "Invalid option: -$OPTARG" >&2
+      fi
+      syntax
+      exit 4
+      ;;
+  esac
+done
+
+shift `expr $OPTIND - 1`
+if [ $# -ne 0 ]; then
+        syntax
+        exit 4
+fi
+
+validcmd "${RMVSSSH}"
+if [ $? -gt 0 ] ; then
+  echo "Remote MVS ssh command: ${RMVSSSH} can not be found"
+  exit 1
+fi
+validcmd "${RMVSSCP}"
+if [ $? -gt 0 ] ; then
+  echo "Remote MVS scp command: ${RMVSSCP} can not be found"
+  exit 1
+fi
+
+if [ "${RMVSHOST}" = "" ]; then
+  echo "Remote MVS Host environment variable RMVSHOST must be specified"
+  exit 1
+fi
+
+if [ "${RMVSUSER}" = "" ]; then
+  echo "Remote MVS User environment variable RMVSUSER must be specified"
+  exit 1
+fi

@@ -1,0 +1,78 @@
+#!/bin/sh
+#set -x
+if [ "$_" = "$0" ]; then
+	echo "rmvsfn is a helper routine and is not meant to be invoked directly" >&2
+fi
+
+escapeDataset() {
+  local extension="${1##*(}"
+  if [ "${extension}" = "${1}" ]; then
+    local dataset=${extension}
+  else
+    local dataset="${1%(*}"
+    local member="${extension%)*}"
+    local dataset="${dataset}\\\(${member}\\\)"
+  fi
+  echo "${dataset}"
+}
+
+escapeArgs() {
+  old="'"
+  new="\"'\""
+  args=$(echo "${*}" | sed -e "s/${old}/${new}/g")
+  old='('
+  new='\\('
+  args=$(echo "${args}" | sed -e "s/${old}/${new}/g")
+  old=')'
+  new='\\)'
+  args=$(echo "${args}" | sed -e "s/${old}/${new}/g")
+  echo "${args}"
+}
+
+rmvsSSH() {
+ if [ $# -eq 2 ]; then
+   opts=`echo ${1}`
+   args="${2}"
+ else
+   opts=""
+   args="${1}"
+ fi
+  exports='export _BPXK_AUTOCVT=ON;export _CEE_RUNOPTS=FILETAG\(AUTOCVT,AUTOTAG\),POSIX\(ON\); export PATH='${RMVSDIR}':${PATH};'
+ if [ "${opts}" = "-v" ]; then
+   echo "${RMVSSSH} -q ${RMVSSSHOPTS} ${RMVSUSER}@${RMVSHOST} ${exports} ${args}"
+ fi
+ args=`escapeArgs "${args}"`
+ ${RMVSSSH} -q ${RMVSSSHOPTS} ${RMVSUSER}@${RMVSHOST} "${exports} ${args}"
+}
+
+cpToZOSHFS() {
+  if [ $# -eq 3 ]; then
+    local opts=`echo ${1}`
+    local src="${2}"
+    local dst="${3}"
+  else
+    local opts=""
+    local src="${1}"
+    local dst="${2}"
+  fi
+  if [ "${opts}" = "-v" ]; then
+    echo "${RMVSSCP} -q ${RMVSSCPOPTS} ${src} ${RMVSUSER}@${RMVSHOST}:${dst}"
+  fi
+  ${RMVSSCP} -q ${RMVSSCPOPTS} ${src} ${RMVSUSER}@${RMVSHOST}:${dst}
+}
+
+cpFromZOSHFS() {
+  if [ $# -eq 3 ]; then
+    local opts=`echo ${1}`
+    local src="${2}"
+    local dst="${3}"
+  else
+    local opts=""
+    local src="${1}"
+    local dst="${2}"
+  fi
+  if [ "${opts}" = "-v" ]; then
+    echo "${RMVSSCP} -q ${RMVSSCPOPTS} ${RMVSUSER}@${RMVSHOST}:${src} ${dst}"
+  fi
+  ${RMVSSCP} -q ${RMVSSCPOPTS} ${RMVSUSER}@${RMVSHOST}:${src} ${dst}
+}
