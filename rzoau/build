@@ -1,3 +1,0 @@
-#!/bin/sh
-docker build -t zoaufyre11 --build-arg priv="`cat ~/.ssh/zoau/id_rsa`" --build-arg pub="`cat ~/.ssh/zoau/id_rsa.pub`" --build-arg server="mike11.fyre.ibm.com" --build-arg port="2022" --build-arg zosdir="/zaas1/mvsutil/bin" --build-arg user="IBMUSER" .
-
