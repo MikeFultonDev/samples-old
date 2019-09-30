@@ -1,0 +1,2 @@
+#!/bin/sh
+docker build -t dev --build-arg priv="`cat ~/rzoau/.ssh/id_rsa`" --build-arg pub="`cat ~/rzoau/.ssh/id_rsa.pub`" --build-arg server="9.12.41.103" --build-arg port="22" --build-arg zosdir="/home/fultonm/bin" --build-arg user="FULTONM" -f Dockerfile .
