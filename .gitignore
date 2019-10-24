@@ -1,4 +1,8 @@
 *.o
 *.lst
+*.class
 dscp
 findmem
+conv/a2e
+conv/e2a
+conv/conv.h

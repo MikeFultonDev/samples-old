@@ -1,0 +1,5 @@
+#!/bin/sh
+javac genconv.java
+java genconv >conv.h
+cc -o a2e -O3 a2e.c
+cc -o e2a -O3 e2a.c
