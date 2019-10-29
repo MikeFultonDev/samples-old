@@ -9,7 +9,32 @@ crtds() {
 
 crtzfs() {
 	root=$1 
-	middle='/usr/lpp/IBM/cobol/igyv6r3'
+	middle='/usr/lpp/IBM/cobol/igyv6r3/'
+	mkdir -p -m 755 ${root}${middle}
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		exit $rc
+	fi
+
+	mvscmdauth --pgm=IDCAMS --sysprint='*' --sysin=stdin <<zzz
+   DEFINE CLUSTER(NAME(${IGYHLQ}.ZFS) -
+   LINEAR CYLINDERS(2 1) SHAREOPTIONS(3)
+zzz
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		exit $rc
+	fi
+	mvscmdauth --pgm=IOEAGFMT --args="-aggregate ${IGYHLQ}.ZFS -compat" --sysprint='*'
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		exit $rc
+	fi
+	/usr/sbin/mount -t zfs -f ${IGYHLQ}.ZFS ${root}${middle}
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		exit $rc
+	fi
+
 	leaves='bin/.orig bin/IBM lib/nls/msg/C lib/nls/msg/Ja_JP include demo/oosample'
 	for l in $leaves; do
 		mkdir -p -m 755 ${root}${middle}${l}
@@ -18,6 +43,7 @@ crtzfs() {
 			exit $rc
 		fi
 	done
+	exit 0
 }
 
 crtddef() {
@@ -98,6 +124,46 @@ zzz
 	exit $rc
 }
 
+runivp() {
+	tempprefix="${IGYHLQ}T"
+	tempds=`mvstmp ${tempprefix}`
+	dtouch -tseq $tempds
+
+	jobcard="//IGYWIVP1   JOB ${JOBOPTS},${JOBPARMS}"
+	decho "$jobcard" ${tempds}
+	decho -a "//*
+//PROCLIB JCLLIB ORDER=${IGYHLQ}.SIGYPROC
+//RUNIVP EXEC IGYWCLG,REGION=0M,
+//  LNGPRFX=${IGYHLQ},
+//  LIBPRFX=${CEEHLQ},
+//  PARM.LKED='LIST.XREF,LET,MAP',
+//  PARM.COBOL='RENT',
+//  PARM.GO=''
+//COBOL.SYSIN DD DISP=SHR,
+//  DSN=${IGYHLQ}.SIGYSAMP(IGYIVP)
+//GO.SYSOUT DD SYSOUT=*
+" ${tempds}
+
+	job=`jsub $tempds`
+	running=1
+	while [ ${running} -gt 0 ]; do
+		status=`jls ${job} | awk '{ print $4; }'`
+		if [ "${status}" != 'AC' ]; then
+			running=0
+		else 
+			sleep 1
+		fi
+	done
+	rc=`jls ${job} | awk '{ print $5; }'`
+	if [ ${rc} != '0' ]; then
+		echo "IVP failed with RC:${rc}"
+		exit 16
+	fi
+
+	drm $tempds
+	exit 0
+}
+
 props="./igy630config.properties"
 
 if [ -f ${props} ]; then
@@ -137,45 +203,16 @@ fi
 out=`crtddef`
 rc=$?
 if [ $rc -gt 0 ]; then
-	echo "zFS File system creation failed. Installation aborted"
+	echo "SMP Data Definition failed. Installation aborted"
 	echo "$out"
 	exit $rc
 fi
 
-tempprefix="${IGYHLQ}T"
-tempds=`mvstmp ${tempprefix}`
-dtouch -tseq $tempds
-
-jobcard="//IGYWIVP1   JOB ${JOBOPTS},${JOBPARMS}"
-decho "$jobcard" ${tempds}
-decho -a "//*
-//PROCLIB JCLLIB ORDER=${IGYHLQ}.SIGYPROC
-//RUNIVP EXEC IGYWCLG,REGION=0M,
-//  LNGPRFX=${IGYHLQ},
-//  LIBPRFX=${CEEHLQ},
-//  PARM.LKED='LIST.XREF,LET,MAP',
-//  PARM.COBOL='RENT',
-//  PARM.GO=''
-//COBOL.SYSIN DD DISP=SHR,
-//  DSN=${IGYHLQ}.SIGYSAMP(IGYIVP)
-//GO.SYSOUT DD SYSOUT=*
-" ${tempds}
-
-job=`jsub $tempds`
-running=1
-while [ ${running} -gt 0 ]; do
-	status=`jls ${job} | awk '{ print $4; }'`
-	if [ "${status}" != 'AC' ]; then
-		running=0
-	else 
-		sleep 1
-	fi
-done
-rc=`jls ${job} | awk '{ print $5; }'`
-if [ ${rc} != '0' ]; then
-	echo "IVP failed with RC:${rc}"
-	exit 16
+out=`runivp`
+rc=$?
+if [ $rc -gt 0 ]; then
+	echo "IVP failed. Installation aborted"
+	echo "$out"
+	exit $rc
 fi
-
-drm $tempds
 

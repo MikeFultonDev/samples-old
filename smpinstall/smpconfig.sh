@@ -155,23 +155,46 @@ definesmpcntl() {
        return 0
 }
 
+configureCSI() {
+	#
+	#********************************************************************
+	# Prime the CSI data sets with:
+	# - zone definitions for a global, target, and dlib zone
+	# - basic OPTIONS entry
+	# - DDDEF entries for operational and temporary data sets
+	#********************************************************************
+	#
+	smpcntl=`definesmpcntl "${HLQ}"`
+	mvscmdauth --pgm=GIMSMP --smpcsi=${GLOBAL_CSI} --smppts=${HLQ}.SMPPTS --smplog='*' --smpout='*' --smprpt='*' --smplist='*' --sysprint='*' --smpcntl=stdin <<zzz
+${smpcntl}
+zzz
+	exit $?
+}
+
+defineClusters() {
+	gcsi=`definecsicluster "${GLOBAL_CSI}"`
+	tcsi=`definecsicluster "${TARGET_CSI}"`
+	dcsi=`definecsicluster "${DLIB_CSI}"`
+
+	mvscmdauth --pgm=IDCAMS --sysprint='*' --repro=${REPRO_FROM} --sysin=stdin <<zzz
+${gcsi}
+${tcsi}
+${dcsi}
+zzz
+	exit $?
+}
+
 HLQ='TST'
 GLOBAL_CSI="${HLQ}.GLOBAL.CSI"
 TARGET_CSI="${HLQ}.TARGET.CSI"
 DLIB_CSI="${HLQ}.DLIB.CSI"
 REPRO_FROM="SYS1.MACLIB(GIMZPOOL)"
 
-gcsi=`definecsicluster "${GLOBAL_CSI}"`
-tcsi=`definecsicluster "${TARGET_CSI}"`
-dcsi=`definecsicluster "${DLIB_CSI}"`
-
-mvscmdauth --pgm=IDCAMS --sysprint='*' --repro=${REPRO_FROM} --sysin=stdin <<zzz
-  ${gcsi}
-  ${tcsi}
-  ${dcsi}
-zzz
-if [ $? -gt 0 ]; then
-     exit 16
+out=`defineClusters`
+rc=$?
+if [ $rc -gt 0 ]; then
+	echo $out
+	exit $rc
 fi
 
 datasets="${HLQ}.SMPPTS:-s500M,-tpdse
@@ -191,19 +214,9 @@ if [ $? -gt 0 ]; then
      exit 16
 fi
 
-#
-#********************************************************************
-# Prime the CSI data sets with:
-# - zone definitions for a global, target, and dlib zone
-# - basic OPTIONS entry
-# - DDDEF entries for operational and temporary data sets
-#********************************************************************
-#
-set -x
-smpcntl=`definesmpcntl "${HLQ}"`
-mvscmdauth --pgm=GIMSMP --smpcsi=${GLOBAL_CSI} --smppts=${HLQ}.SMPPTS --smplog='*' --smpout='*' --smprpt='*' --smplist='*' --sysprint='*' --smpcntl=stdin <<zzz
-  ${smpcntl}
-zzz
-if [ $? -gt 0 ]; then
-     exit 16
+out=`configureCSI`
+rc=$?
+if [ $rc -gt 0 ]; then
+	echo ${out}
 fi
+exit $rc 
