@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+#set -x
 
 crtds() {
 	list=$1
@@ -7,7 +7,98 @@ crtds() {
 	exit $?
 }
 
-props="./igy630.properties"
+crtzfs() {
+	root=$1 
+	middle='/usr/lpp/IBM/cobol/igyv6r3'
+	leaves='bin/.orig bin/IBM lib/nls/msg/C lib/nls/msg/Ja_JP include demo/oosample'
+	for l in $leaves; do
+		mkdir -p -m 755 ${root}${middle}${l}
+		rc=$?
+		if [ $rc -gt 0 ]; then
+			exit $rc
+		fi
+	done
+}
+
+crtddef() {
+targetsmpcntl=\
+" SET   BDY(${IGYSMPTGT}).
+ UCLIN.
+  ADD DDDEF(SIGYMAC)
+      DA(${IGYHLQ}.SIGYMAC)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(SIGYCOMP)
+      DA(${IGYHLQ}.SIGYCOMP)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(SIGYPROC)
+      DA(${IGYHLQ}.SIGYPROC)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(SIGYSAMP)
+      DA(${IGYHLQ}.SIGYSAMP)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(AIGYHFS)
+      DA(${IGYHLQ}.AIGYHFS)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(AIGYMOD1)
+      DA(${IGYHLQ}.AIGYMOD1)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(AIGYSRC1)
+      DA(${IGYHLQ}.AIGYSRC1)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(SIGYHFS)
+      PATH('${IGYROOT}/usr/lpp/IBM/cobol/igyv6r3/bin/IBM/').
+ ENDUCL."
+
+distsmpcntl=\
+" SET   BDY(${IGYSMPDIST}).
+ UCLIN.
+  ADD DDDEF(AIGYHFS)
+      DA(${IGYHLQ}.AIGYHFS)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(AIGYMOD1)
+      DA(${IGYHLQ}.AIGYMOD1)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+  ADD DDDEF(AIGYSRC1)
+      DA(${IGYHLQ}.AIGYSRC1)
+      UNIT(SYSALLDA)
+      WAITFORDSN
+      SHR.
+ ENDUCL."
+
+	mvscmdauth --pgm=GIMSMP --smpcsi=${IGYGLOBALCSI}  --smppts=TST.SMPPTS --smplog='*' --smpout='*' --smprpt='*' --smplist='*' --sysprint='*'  --smpcntl=stdin <<zzz
+${targetsmpcntl}
+zzz
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		exit $rc
+	fi
+
+	mvscmdauth --pgm=GIMSMP --smpcsi=${IGYGLOBALCSI} --smplog='*' --smpout='*' --smprpt='*' --smplist='*' --sysprint='*' --smpcntl=stdin <<zzz
+${distsmpcntl}
+zzz
+	rc=$?
+	exit $rc
+}
+
+props="./igy630config.properties"
 
 if [ -f ${props} ]; then
 	value=`cat ${props}`
@@ -17,6 +108,9 @@ if [ -f ${props} ]; then
 		eval "$v";
 	done	
 	IFS=$OLDIFS
+else
+	echo "Unable to find properties file. Make sure you cd to this directory before running the script."
+	exit 16
 fi
 
 ds="
@@ -29,7 +123,22 @@ ds="
 out=`crtds "${ds}"`
 rc=$?
 if [ $rc -gt 0 ]; then
-	echo "Installation Failed."
+	echo "Dataset creation failed. Installation aborted"
+	exit $rc
+fi
+
+out=`crtzfs "${IGYROOT}"`
+rc=$?
+if [ $rc -gt 0 ]; then
+	echo "zFS File system creation failed. Installation aborted"
+	exit $rc
+fi
+
+out=`crtddef`
+rc=$?
+if [ $rc -gt 0 ]; then
+	echo "zFS File system creation failed. Installation aborted"
+	echo "$out"
 	exit $rc
 fi
 

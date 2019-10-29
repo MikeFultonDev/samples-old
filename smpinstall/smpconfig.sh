@@ -199,10 +199,10 @@ fi
 # - DDDEF entries for operational and temporary data sets
 #********************************************************************
 #
-
+set -x
 smpcntl=`definesmpcntl "${HLQ}"`
 mvscmdauth --pgm=GIMSMP --smpcsi=${GLOBAL_CSI} --smppts=${HLQ}.SMPPTS --smplog='*' --smpout='*' --smprpt='*' --smplist='*' --sysprint='*' --smpcntl=stdin <<zzz
-  ${smpctl}
+  ${smpcntl}
 zzz
 if [ $? -gt 0 ]; then
      exit 16
