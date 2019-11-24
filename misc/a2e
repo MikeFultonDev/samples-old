@@ -1,0 +1,52 @@
+#!/bin/sh
+#*******************************************************************************
+# Licensed Materials - Property of IBM
+# (c) Copyright IBM Corporation 2019. All Rights Reserved.
+#
+# Note to U.S. Government Users Restricted Rights:
+# Use, duplication or disclosure restricted by GSA ADP Schedule
+# Contract with IBM Corp.
+#*******************************************************************************
+#
+# a2e: convert file on disk in EBCDIC to ASCII
+#
+syntax() {
+	echo 'Syntax: a2e <file>: convert file from ascii to ebcdic' >&2
+}
+debug=0
+verbose=0
+while getopts ":vd" opt; do
+	case ${opt} in
+	d )
+           	debug=1
+		;;
+	v )
+           	verbose=1
+		;;
+	\?)
+           	if [ "${OPTARG}" != "?" ]; then
+                        echo "Invalid option: -$OPTARG" >&2
+		fi
+                syntax
+		exit 4
+		;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+if [ $# -ne 1 ]; then
+	echo 'Need to specify a file to convert' >&2
+	syntax
+	exit 16
+fi
+
+if [ ! -f $1 ]; then
+	echo 'File specified is not a regular file' >&2
+	syntax
+	exit 16
+fi
+
+iconv -t IBM-1047 -f ISO8859-1 <$1 >/tmp/ebcdic.$$
+
+#msf - we should be fixing up the permissions here... 
+mv /tmp/ebcdic.$$ $1
+chtag -tc IBM-1047 $1
