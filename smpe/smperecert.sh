@@ -16,4 +16,5 @@ certCADataset="${me}.SMPE.DIGICERT.CA.CRT"
 CALabel="DigiCert Global Root CA"
 
 tsoPrintError "RACDCERT CERTAUTH ADD('${certCADataset}') WITHLABEL('${CALabel}') TRUST"
-
+tsoPrintError "racdcert certauth add('IBMUSER.SMPE.DIGICERT.CA.CRT') withlabel('DigiCert Global Root CA') TRUST"
+tsoPrintError "racdcert certauth add('IBMUSER.SMPE.DIGICERT.G2.CRT') withlabel('DigiCert Global Root G2') TRUST"

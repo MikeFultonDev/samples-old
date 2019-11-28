@@ -8,7 +8,7 @@ export SMPE_LABEL="SMPE Client Certificate"
 export SMPE_RING="SMPERING"
 export SMPE_SERVER="eccgw01.boulder.ibm.com"
 
-owner="TSTRADM"
+owner="IBMUSER"
 tmpOrderHFS=${TMP}/order.$$.xml
 tmpClientHFS=${TMP}/client.$$.xml
 tmpCntlHFS=${TMP}/cntl.$$.xml

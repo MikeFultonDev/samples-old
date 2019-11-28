@@ -14,6 +14,7 @@ gimsmp <<zz
 zz
 rc=$?
 if [ ${rc} -ne 0 ]; then
+	cat ${TMP}/smp.smpout
 	exit ${rc}
 fi
 
