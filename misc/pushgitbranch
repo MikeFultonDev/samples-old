@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ $# -ne 1 ]; then
+	echo "Syntax: pushgitbranch <branch name>" >&2
+	echo "  This is using the branch you created with crtgitbranch" >&2
+	exit 4
+fi
+
+git push --set-upstream origin experiment
+exit $? 

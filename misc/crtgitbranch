@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ $# -ne 1 ]; then
+	echo "Syntax: crtgitbranch <branch name>" >&2
+	echo "  when done, you will do a pushgitbranch after add/commit <branch name> " >&2
+	exit 4
+fi
+
+git checkout -b $1
+exit $? 
